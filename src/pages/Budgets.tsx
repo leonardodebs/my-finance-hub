@@ -4,14 +4,22 @@ import { formatCurrency, type Budget } from "@/data/financeData";
 import { useBudgets, useAddBudget, useDeleteBudget } from "@/hooks/useFinance";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Info, Loader2, Trash2, Utensils, Film, Car, Home, Target } from "lucide-react";
+import { PlusCircle, Info, Loader2, Trash2, Utensils, Film, Car, Home, Target, Pill, Book, ShoppingCart, Fuel, Laptop, Shirt, Smile, Gift } from "lucide-react";
 import { AddBudgetModal } from "@/components/AddBudgetModal";
 
 const iconMap: Record<string, React.ElementType> = {
   utensils: Utensils,
   film: Film,
   car: Car,
-  home: Home
+  home: Home,
+  pill: Pill,
+  book: Book,
+  "shopping-cart": ShoppingCart,
+  fuel: Fuel,
+  laptop: Laptop,
+  shirt: Shirt,
+  smile: Smile,
+  gift: Gift
 };
 
 export default function Budgets() {

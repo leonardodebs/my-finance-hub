@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Budget } from "@/data/financeData";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
+import { Utensils, Home, Car, Film, Pill, Book, ShoppingCart, Fuel, Laptop, Shirt, Smile, Gift } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -9,12 +10,27 @@ interface Props {
   onAdd: (b: Omit<Budget, "id" | "spent">) => void;
 }
 
-const icons = ["🍽️", "🏠", "🚗", "🎬", "💊", "📚", "🛒", "⛽", "💻", "👔", "💆", "🎁"];
+const iconMapRecord: Record<string, React.ElementType> = {
+  utensils: Utensils,
+  home: Home,
+  car: Car,
+  film: Film,
+  pill: Pill,
+  book: Book,
+  "shopping-cart": ShoppingCart,
+  fuel: Fuel,
+  laptop: Laptop,
+  shirt: Shirt,
+  smile: Smile,
+  gift: Gift
+};
+
+const iconKeys = Object.keys(iconMapRecord);
 
 export function AddBudgetModal({ open, onClose, onAdd }: Props) {
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState("");
-  const [icon, setIcon] = useState(icons[0]);
+  const [icon, setIcon] = useState(iconKeys[0]);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,7 +92,9 @@ export function AddBudgetModal({ open, onClose, onAdd }: Props) {
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Ícone</label>
                 <div className="flex flex-wrap gap-2">
-                  {icons.map((i) => (
+                  {iconKeys.map((i) => {
+                    const IconComp = iconMapRecord[i];
+                    return (
                     <button
                       key={i}
                       type="button"
@@ -85,9 +103,10 @@ export function AddBudgetModal({ open, onClose, onAdd }: Props) {
                         icon === i ? "bg-primary text-primary-foreground scale-110" : "bg-muted hover:bg-muted/80"
                       }`}
                     >
-                      {i}
+                      <IconComp className="h-5 w-5" />
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
