@@ -9,20 +9,23 @@ interface Props {
   onAdd: (t: Omit<Transaction, "id">) => void;
 }
 
-const categories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Educação", "Investimentos", "Renda", "Freelance", "Outro"];
+const expenseCategories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Educação", "Outros"];
+const revenueCategories = ["Salário", "Freelance", "Investimentos", "Outros"];
 
 export function AddTransactionModal({ open, onClose, onAdd }: Props) {
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"revenue" | "expense">("expense");
-  const [category, setCategory] = useState("Alimentação");
+  const [category, setCategory] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [obs, setObs] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const activeCategories = type === "revenue" ? revenueCategories : expenseCategories;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!desc || !amount) return;
+    if (!desc || !amount || !category) return;
     setSaving(true);
     setTimeout(() => {
       onAdd({
@@ -35,11 +38,16 @@ export function AddTransactionModal({ open, onClose, onAdd }: Props) {
       setDesc("");
       setAmount("");
       setType("expense");
-      setCategory("Alimentação");
+      setCategory("");
       setDate(new Date().toISOString().slice(0, 10));
       setObs("");
       setSaving(false);
     }, 400);
+  };
+
+  const handleTypeChange = (newType: "revenue" | "expense") => {
+    setType(newType);
+    setCategory("");
   };
 
   return (
@@ -74,7 +82,7 @@ export function AddTransactionModal({ open, onClose, onAdd }: Props) {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
                   type="button"
-                  onClick={() => setType("expense")}
+                  onClick={() => handleTypeChange("expense")}
                   className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
                     type === "expense" 
                       ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-100 dark:border-red-500/20" 
@@ -85,7 +93,7 @@ export function AddTransactionModal({ open, onClose, onAdd }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setType("revenue")}
+                  onClick={() => handleTypeChange("revenue")}
                   className={`py-2.5 rounded-lg text-sm font-medium transition-all border ${
                     type === "revenue" 
                       ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20" 
@@ -143,7 +151,7 @@ export function AddTransactionModal({ open, onClose, onAdd }: Props) {
                   className="w-full bg-white dark:bg-[#0F121E] border border-gray-200 dark:border-indigo-900/40 rounded-lg px-3 py-2 text-sm text-foreground dark:text-white outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 >
                   <option value="" disabled>Selecione...</option>
-                  {categories.map((c) => (
+                  {activeCategories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
