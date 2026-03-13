@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getTransactions, saveTransactions, deleteTransaction, formatCurrency, type Transaction } from "@/data/financeData";
-import { Plus, Loader2, Trash2 } from "lucide-react";
+import { Plus, Loader2, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { AddTransactionModal } from "./AddTransactionModal";
 
 export function TransactionList() {
@@ -41,71 +41,68 @@ export function TransactionList() {
 
   return (
     <motion.div
-      className="bg-card rounded-xl p-6 card-shadow"
+      className="rounded-xl p-6 shadow-sm border border-indigo-900/20"
+      style={{ backgroundColor: '#0F121E' }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.5 }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-medium text-muted-foreground">Transações Recentes</h2>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium h-9 px-3 rounded-lg hover:bg-primary/90 active:scale-[0.98] transition-all duration-200"
-        >
-          <Plus className="h-4 w-4" />
-          Adicionar
-        </button>
+        <h2 className="text-sm font-medium text-white tracking-wide">Transações Recentes</h2>
+        <a href="/transacoes" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+          Ver todas &rarr;
+        </a>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th className="pb-3 font-medium">Descrição</th>
-              <th className="pb-3 font-medium hidden sm:table-cell">Categoria</th>
-              <th className="pb-3 font-medium hidden md:table-cell tabular-nums">Data</th>
-              <th className="pb-3 font-medium text-right">Valor</th>
-              <th className="pb-3 font-medium text-right w-10"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence>
-              {sorted.map((t) => (
-                <motion.tr
-                  key={t.id}
-                  className={`border-b border-border last:border-0 hover:bg-muted/50 transition-colors ${
-                    t.isNew ? "animate-flash-green" : ""
-                  }`}
-                  initial={t.isNew ? { opacity: 0, y: -8 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
+      <div className="space-y-3 mt-4">
+        <AnimatePresence>
+          {sorted.slice(0, 5).map((t) => (
+            <motion.div
+              key={t.id}
+              className={`flex items-center justify-between p-4 rounded-xl border border-indigo-900/40 bg-[#151928] hover:bg-[#1A1F30] transition-colors ${
+                t.isNew ? "animate-flash-green" : ""
+              }`}
+              initial={t.isNew ? { opacity: 0, y: -8 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`p-2.5 rounded-lg flex items-center justify-center ${
+                  t.type === "revenue" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                }`}>
+                  {t.type === "revenue" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                </div>
+                <div>
+                  <p className="font-semibold text-white/90 text-sm">{t.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t.category} &middot; {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <span className={`font-semibold tabular-nums text-sm ${
+                  t.type === "revenue" ? "text-emerald-400" : "text-rose-400"
+                }`}>
+                  {t.type === "revenue" ? "+ " : "- "}{formatCurrency(t.amount)}
+                </span>
+                <button 
+                  onClick={() => handleDelete(t.id)}
+                  className="text-muted-foreground hover:text-rose-400 p-1.5 transition-colors opacity-60 hover:opacity-100"
                 >
-                  <td className="py-3 font-medium text-foreground">{t.description}</td>
-                  <td className="py-3 text-muted-foreground hidden sm:table-cell">{t.category}</td>
-                  <td className="py-3 text-muted-foreground hidden md:table-cell tabular-nums text-xs">
-                    {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                  </td>
-                  <td className={`py-3 text-right tabular-nums font-medium ${
-                    t.type === "revenue" ? "text-revenue" : "text-expense"
-                  }`}>
-                    {t.type === "revenue" ? "+" : "−"}{formatCurrency(t.amount)}
-                  </td>
-                  <td className="py-3 text-right">
-                    <button 
-                      onClick={() => handleDelete(t.id)}
-                      className="text-muted-foreground hover:text-expense p-1 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
-        </table>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        {sorted.length === 0 && !loading && (
+          <div className="p-8 text-center text-muted-foreground text-sm border border-indigo-900/20 rounded-xl bg-[#151928]">
+            Nenhuma transação lançada.
+          </div>
+        )}
       </div>
-
-      <AddTransactionModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={handleAdd} />
     </motion.div>
   );
 }

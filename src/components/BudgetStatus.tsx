@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getBudgets, formatCurrency, type Budget } from "@/data/financeData";
 
+const COLORS = ['#eab308', '#10b981', '#a855f7', '#3b82f6'];
+
 export function BudgetStatus() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
@@ -13,32 +15,40 @@ export function BudgetStatus() {
 
   return (
     <motion.div
-      className="bg-card rounded-xl p-6 card-shadow"
+      className="rounded-xl p-6 shadow-sm border border-indigo-900/20"
+      style={{ backgroundColor: '#0F121E' }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.4 }}
     >
-      <h2 className="text-sm font-medium text-muted-foreground mb-4">Orçamentos</h2>
-      <div className="space-y-4">
-        {budgets.map((b) => {
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-sm font-medium text-white tracking-wide">Orçamento Mensal</h2>
+        <a href="/orcamentos" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+          Gerenciar &rarr;
+        </a>
+      </div>
+      <div className="space-y-6">
+        {budgets.map((b, i) => {
           const pct = Math.min((b.spent / b.limit_amount) * 100, 100);
           const isOver = b.spent > b.limit_amount;
+          const barColor = isOver ? '#F43F5E' : COLORS[i % COLORS.length];
           return (
             <div key={b.category}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-foreground">
-                  {b.icon} {b.category}
-                </span>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {formatCurrency(b.spent)} / {formatCurrency(b.limit_amount)}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: barColor }} />
+                  <span className="text-sm font-medium text-white">
+                    {b.category}
+                  </span>
+                </div>
+                <span className="text-xs tabular-nums text-muted-foreground font-medium">
+                  {formatCurrency(b.spent)} <span className="text-muted-foreground/50">/ {formatCurrency(b.limit_amount)}</span>
                 </span>
               </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-1.5 bg-[#1E2336] rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    isOver ? "bg-expense" : "bg-primary"
-                  }`}
-                  style={{ width: `${pct}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, backgroundColor: barColor }}
                 />
               </div>
             </div>
