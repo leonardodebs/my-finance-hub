@@ -9,7 +9,7 @@ interface Props {
   onAdd: (t: Omit<Transaction, "id">) => void;
 }
 
-const expenseCategories = ["Alimentação", "Moradia", "Transporte", "Lazer", "Saúde", "Educação", "Outros"];
+const expenseCategories = ["Alimentação", "Transporte", "Moradia", "Saúde", "Educação", "Lazer", "Compras", "Contas", "Outros"];
 const revenueCategories = ["Salário", "Freelance", "Investimentos", "Outros"];
 
 export function AddTransactionModal({ open, onClose, onAdd }: Props) {
