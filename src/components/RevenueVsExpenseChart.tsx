@@ -7,8 +7,8 @@ import { ptBR } from "date-fns/locale";
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#121521] rounded-lg p-3 border border-indigo-900/30 shadow-md text-sm">
-        <p className="font-medium text-white mb-2">{label}</p>
+      <div className="bg-card dark:bg-[#121521] rounded-lg p-3 border border-border dark:border-indigo-900/30 shadow-md text-sm">
+        <p className="font-medium text-foreground dark:text-white mb-2">{label}</p>
         <p className="tabular-nums text-emerald-400">
           Receitas: {formatCurrency(payload[0].value)}
         </p>
@@ -64,13 +64,12 @@ export function RevenueVsExpenseChart({ transactions }: RevenueVsExpenseChartPro
 
   return (
     <motion.div
-      className="rounded-xl p-6 shadow-sm border border-indigo-900/20"
-      style={{ backgroundColor: '#0F121E' }}
+      className="rounded-xl p-6 shadow-sm border border-border dark:border-indigo-900/20 bg-card dark:bg-[#0F121E]"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
     >
-      <h2 className="text-sm font-medium text-white mb-6">Receitas vs Despesas</h2>
+      <h2 className="text-sm font-medium text-foreground dark:text-white mb-6">Receitas vs Despesas</h2>
       <div className="h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={displayData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

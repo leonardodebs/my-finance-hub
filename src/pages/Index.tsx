@@ -60,15 +60,15 @@ const Index = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Finanças Pessoais</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground dark:text-white mb-1">Finanças Pessoais</h1>
           <p className="text-muted-foreground text-sm">Visão geral do mês atual</p>
         </div>
         <Button 
           variant="outline"
-          className="bg-white text-black hover:bg-gray-100 font-medium gap-2 transition-colors duration-200"
+          className="bg-card text-foreground hover:bg-accent dark:bg-white dark:text-black dark:hover:bg-gray-100 font-medium gap-2 transition-colors duration-200"
           onClick={() => setModalOpen(true)}
         >
-          <Plus className="h-4 w-4 text-black" /> Nova Transação
+          <Plus className="h-4 w-4" /> Nova Transação
         </Button>
       </div>
 

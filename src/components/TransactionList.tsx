@@ -41,14 +41,13 @@ export function TransactionList() {
 
   return (
     <motion.div
-      className="rounded-xl p-6 shadow-sm border border-indigo-900/20"
-      style={{ backgroundColor: '#0F121E' }}
+      className="rounded-xl p-6 shadow-sm border border-border dark:border-indigo-900/20 bg-card dark:bg-[#0F121E]"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.5 }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-medium text-white tracking-wide">Transações Recentes</h2>
+        <h2 className="text-sm font-medium text-foreground dark:text-white tracking-wide">Transações Recentes</h2>
         <a href="/transacoes" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
           Ver todas &rarr;
         </a>
@@ -59,7 +58,7 @@ export function TransactionList() {
           {sorted.slice(0, 5).map((t) => (
             <motion.div
               key={t.id}
-              className={`flex items-center justify-between p-4 rounded-xl border border-indigo-900/40 bg-[#151928] hover:bg-[#1A1F30] transition-colors ${
+              className={`flex items-center justify-between p-4 rounded-xl border border-border dark:border-indigo-900/40 bg-muted/60 dark:bg-[#151928] hover:bg-muted dark:hover:bg-[#1A1F30] transition-colors ${
                 t.isNew ? "animate-flash-green" : ""
               }`}
               initial={t.isNew ? { opacity: 0, y: -8 } : false}
@@ -73,7 +72,7 @@ export function TransactionList() {
                   {t.type === "revenue" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-white/90 text-sm">{t.description}</p>
+                  <p className="font-semibold text-foreground/90 dark:text-white/90 text-sm">{t.description}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {t.category} &middot; {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
                   </p>
@@ -98,7 +97,7 @@ export function TransactionList() {
         </AnimatePresence>
         
         {sorted.length === 0 && !loading && (
-          <div className="p-8 text-center text-muted-foreground text-sm border border-indigo-900/20 rounded-xl bg-[#151928]">
+          <div className="p-8 text-center text-muted-foreground text-sm border border-border dark:border-indigo-900/20 rounded-xl bg-muted/30 dark:bg-[#151928]">
             Nenhuma transação lançada.
           </div>
         )}

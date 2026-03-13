@@ -7,8 +7,8 @@ const COLORS = ['#a855f7', '#eab308', '#ef4444', '#3b82f6', '#f97316', '#64748b'
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#121521] rounded-lg p-3 border border-indigo-900/30 shadow-md text-sm">
-        <p className="font-medium text-white">{payload[0].name}</p>
+      <div className="bg-card dark:bg-[#121521] rounded-lg p-3 border border-border dark:border-indigo-900/30 shadow-md text-sm">
+        <p className="font-medium text-foreground dark:text-white">{payload[0].name}</p>
         <p className="tabular-nums text-muted-foreground mt-1">{formatCurrency(payload[0].value)}</p>
       </div>
     );
@@ -28,13 +28,12 @@ export function ExpenseChart({ data }: ExpenseChartProps) {
 
   return (
     <motion.div
-      className="rounded-xl p-6 shadow-sm border border-indigo-900/20"
-      style={{ backgroundColor: '#0F121E' }}
+      className="rounded-xl p-6 shadow-sm border border-border dark:border-indigo-900/20 bg-card dark:bg-[#0F121E]"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.3 }}
     >
-      <h2 className="text-sm font-medium text-white mb-4">Gastos por Categoria</h2>
+      <h2 className="text-sm font-medium text-foreground dark:text-white mb-4">Gastos por Categoria</h2>
       {data.length === 0 ? (
         <div className="h-64 flex flex-col items-center justify-center text-muted-foreground text-sm">
           <p>Nenhuma despesa para exibir no período.</p>
@@ -71,9 +70,9 @@ export function ExpenseChart({ data }: ExpenseChartProps) {
                     className="w-2.5 h-2.5 rounded-full" 
                     style={{ backgroundColor: COLORS[i % COLORS.length] }} 
                   />
-                  <span className="text-gray-300 font-medium">{d.name}</span>
+                  <span className="text-muted-foreground dark:text-gray-300 font-medium">{d.name}</span>
                 </div>
-                <span className="text-white tabular-nums opacity-90">{formatCurrency(d.value)}</span>
+                <span className="text-foreground dark:text-white tabular-nums opacity-90">{formatCurrency(d.value)}</span>
               </div>
             ))}
           </div>
