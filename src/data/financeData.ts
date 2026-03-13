@@ -35,10 +35,31 @@ export interface CategoryExpense {
 
 const API_URL = "http://localhost:3001/api";
 
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  
+  // Interceptor de Segurança: se o token espirar ou faltar, desloga a pessoa
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+    throw new Error('Não Autorizado');
+  }
+
+  return response;
+};
+
 // TRANSACTIONS
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
-    const response = await fetch(`${API_URL}/transactions`);
+    const response = await apiFetch('/transactions');
     if (!response.ok) throw new Error("Failed to fetch transactions");
     return await response.json();
   } catch (err) {
@@ -49,9 +70,8 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 
 export const saveTransactions = async (txn: Omit<Transaction, "id">): Promise<Transaction | null> => {
   try {
-    const response = await fetch(`${API_URL}/transactions`, {
+    const response = await apiFetch('/transactions', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(txn),
     });
     if (!response.ok) throw new Error("Failed to save transaction");
@@ -64,7 +84,7 @@ export const saveTransactions = async (txn: Omit<Transaction, "id">): Promise<Tr
 
 export const deleteTransaction = async (id: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_URL}/transactions/${id}`, { method: "DELETE" });
+    const response = await apiFetch(`/transactions/${id}`, { method: "DELETE" });
     return response.ok;
   } catch (err) {
     console.error("Error deleting transaction:", err);
@@ -75,7 +95,7 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
 // BUDGETS
 export const getBudgets = async (): Promise<Budget[]> => {
   try {
-    const response = await fetch(`${API_URL}/budgets`);
+    const response = await apiFetch('/budgets');
     if (!response.ok) throw new Error("Failed to fetch budgets");
     return await response.json();
   } catch (err) {
@@ -86,9 +106,8 @@ export const getBudgets = async (): Promise<Budget[]> => {
 
 export const saveBudget = async (budget: Omit<Budget, "id" | "spent">): Promise<Budget | null> => {
   try {
-    const response = await fetch(`${API_URL}/budgets`, {
+    const response = await apiFetch('/budgets', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(budget),
     });
     if (!response.ok) throw new Error("Failed to save budget");
@@ -101,7 +120,7 @@ export const saveBudget = async (budget: Omit<Budget, "id" | "spent">): Promise<
 
 export const deleteBudget = async (id: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_URL}/budgets/${id}`, { method: "DELETE" });
+    const response = await apiFetch(`/budgets/${id}`, { method: "DELETE" });
     return response.ok;
   } catch (err) {
     console.error("Error deleting budget:", err);
@@ -112,7 +131,7 @@ export const deleteBudget = async (id: string): Promise<boolean> => {
 // GOALS
 export const getGoals = async (): Promise<Goal[]> => {
   try {
-    const response = await fetch(`${API_URL}/goals`);
+    const response = await apiFetch('/goals');
     if (!response.ok) throw new Error("Failed to fetch goals");
     return await response.json();
   } catch (err) {
@@ -123,9 +142,8 @@ export const getGoals = async (): Promise<Goal[]> => {
 
 export const saveGoal = async (goal: Omit<Goal, "id">): Promise<Goal | null> => {
   try {
-    const response = await fetch(`${API_URL}/goals`, {
+    const response = await apiFetch('/goals', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(goal),
     });
     if (!response.ok) throw new Error("Failed to save goal");
@@ -138,7 +156,7 @@ export const saveGoal = async (goal: Omit<Goal, "id">): Promise<Goal | null> => 
 
 export const deleteGoal = async (id: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_URL}/goals/${id}`, { method: "DELETE" });
+    const response = await apiFetch(`/goals/${id}`, { method: "DELETE" });
     return response.ok;
   } catch (err) {
     console.error("Error deleting goal:", err);
@@ -157,14 +175,14 @@ export interface UserSettings {
 
 export const getSettings = async (): Promise<UserSettings> => {
   try {
-    const response = await fetch(`${API_URL}/settings`);
+    const response = await apiFetch('/settings');
     if (!response.ok) throw new Error("Failed to fetch settings");
     return await response.json();
   } catch (err) {
     console.error("Error fetching settings:", err);
     return {
-      name: "Leonardo",
-      email: "leonardo@exemplo.com",
+      name: "Usuário",
+      email: "...",
       budget_alerts: true,
       weekly_summary: true,
       dark_mode: false
@@ -174,9 +192,8 @@ export const getSettings = async (): Promise<UserSettings> => {
 
 export const saveSettings = async (settings: UserSettings): Promise<UserSettings | null> => {
   try {
-    const response = await fetch(`${API_URL}/settings`, {
+    const response = await apiFetch('/settings', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
     });
     if (!response.ok) throw new Error("Failed to save settings");
