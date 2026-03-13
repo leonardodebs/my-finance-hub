@@ -75,17 +75,22 @@ export default function Transactions() {
     const matchesType = typeFilter === "all" || t.type === typeFilter;
     
     let matchesPeriod = true;
+    // Fix: Add 1 day to 'now' boundaries to safely include timezone-skewed transactions (e.g. UTC date > local date)
+    const safeNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
     if (periodFilter === "7days") {
-      matchesPeriod = isWithinInterval(tDate, { start: subDays(now, 7), end: now });
+      matchesPeriod = isWithinInterval(tDate, { start: subDays(now, 7), end: safeNow });
     } else if (periodFilter === "30days") {
-      matchesPeriod = isWithinInterval(tDate, { start: subDays(now, 30), end: now });
+      matchesPeriod = isWithinInterval(tDate, { start: subDays(now, 30), end: safeNow });
     } else if (periodFilter === "thisMonth") {
-      matchesPeriod = isWithinInterval(tDate, { start: startOfMonth(now), end: endOfMonth(now) });
+      const safeMonthEnd = new Date(endOfMonth(now).getTime() + 24 * 60 * 60 * 1000);
+      matchesPeriod = isWithinInterval(tDate, { start: startOfMonth(now), end: safeMonthEnd });
     } else if (periodFilter === "lastMonth") {
       const lastMonth = subMonths(now, 1);
-      matchesPeriod = isWithinInterval(tDate, { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) });
+      const safeLastMonthEnd = new Date(endOfMonth(lastMonth).getTime() + 24 * 60 * 60 * 1000);
+      matchesPeriod = isWithinInterval(tDate, { start: startOfMonth(lastMonth), end: safeLastMonthEnd });
     } else if (periodFilter === "thisYear") {
-      matchesPeriod = isWithinInterval(tDate, { start: startOfYear(now), end: now });
+      matchesPeriod = isWithinInterval(tDate, { start: startOfYear(now), end: safeNow });
     }
 
     return matchesSearch && matchesType && matchesPeriod;
