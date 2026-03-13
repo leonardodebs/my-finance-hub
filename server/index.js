@@ -226,7 +226,7 @@ app.get('/api/budgets', verifyToken, async (req, res) => {
     const query = `
       SELECT b.*, COALESCE(SUM(t.amount), 0) as spent
       FROM budgets b
-      LEFT JOIN transactions t ON b.category = t.category AND t.type = 'expense' AND (t.user_id = b.user_id OR t.user_id IS NULL)
+      LEFT JOIN transactions t ON LOWER(b.category) = LOWER(t.category) AND t.type = 'expense' AND (t.user_id = b.user_id OR t.user_id IS NULL)
       WHERE b.user_id = $1 OR b.user_id IS NULL
       GROUP BY b.id
     `;

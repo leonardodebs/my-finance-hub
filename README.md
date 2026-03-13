@@ -8,7 +8,7 @@ Um centro de controle financeiro moderno, intuitivo e completo para gestão de g
 
 ### 📊 Painel de Controle (Dashboard)
 - **Visão Geral**: Resumo rápido de saldo atual, receitas totais e despesas.
-* **Gráficos Interativos**: Visualização de gastos por categoria para identificar para onde seu dinheiro está indo.
+- **Gráficos Interativos**: Visualização de gastos por categoria para identificar para onde seu dinheiro está indo.
 - **Comparativo Mensal**: Inteligência que compara os gastos do mês atual com o anterior.
 
 ### 💸 Gestão de Transações
@@ -30,19 +30,19 @@ Um centro de controle financeiro moderno, intuitivo e completo para gestão de g
 ## 🛠️ Tecnologias Utilizadas
 
 ### Frontend
-- **React + Vite**: Performance e rapidez no desenvolvimento.
-- **TypeScript**: Segurança de tipos em todo o projeto.
-- **Tailwind CSS**: Estilização moderna e responsiva.
-- **Shadcn/UI**: Componentes de interface de usuário premium e acessíveis.
-- **Framer Motion**: Animações suaves e micro-interações.
-- **Lucide React**: Biblioteca de ícones elegantes.
+- **React + Vite**: Performance e rapidez extremas no desenvolvimento.
+- **TypeScript**: Segurança de tipos escalável.
+- **React Query (@tanstack/react-query)**: Gerenciamento de estado global e cache inteligente de requisições API. Sem necessidade de recarregamentos desnecessários.
+- **Code-Splitting (React.lazy)**: Carregamento assíncrono de rotas (Lazy Loading) para um Initial Load absurdamente rápido.
+- **Tailwind CSS + Shadcn/UI**: Componentes elegantes, refinados e acessíveis.
+- **Framer Motion**: Animações fluidas e micro-interações que encantam.
 
 ### Backend & Segurança
-- **Node.js + Express**: Servidor robusto para processamento das requisições.
-- **PostgreSQL**: Banco de dados relacional para armazenamento seguro das finanças.
-- **Autenticação JWT**: Sistema de login seguro protegendo o sistema por meio de Tokens.
-- **BcryptJS**: Hash forte para as senhas de usuários.
-- **Filtros e Lógica**: Implementação de lógica de comparação mensal e cálculos de orçamento em tempo real.
+- **Node.js + Express**: API veloz e segura.
+- **PostgreSQL**: Banco de dados relacional com **Índices de Performance** configurados na estrutura de dados.
+- **Multi-Tenancy**: Isolamento completo de dados `user_id`, garantindo que um usuário não acesse os dados de outro de nenhuma maneira.
+- **Autenticação JWT**: API inteiramente protegida por JSON Web Tokens.
+- **BcryptJS**: Hash e salting avançado para senhas de usuários.
 
 ---
 
@@ -50,12 +50,19 @@ Um centro de controle financeiro moderno, intuitivo e completo para gestão de g
 
 ### Pré-requisitos
 - Node.js instalado.
-- PostgreSQL rodando localmente.
+- PostgreSQL rodando localmente (com banco de dados `my_finance` configurado).
 
-### Passo 1: Configurar o Banco de Dados
-1. Crie um banco de dados chamado `my_finance` no seu PostgreSQL.
-2. Execute o script contido em `server/schema.sql` para criar as tabelas e dados iniciais.
-3. Certifique-se de configurar as credenciais no arquivo `.env` (ou use os padrões configurados no `server/index.js`).
+### Passo 1: Configurar Variáveis de Ambiente
+Crie um arquivo `.env` na raiz (caso ainda não exista) com suas configurações do Postgres e JWT Secret:
+```env
+PORT=3001
+DB_USER=postgres
+DB_PASSWORD=sua_senha
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=my_finance
+JWT_SECRET=super_secret_para_sua_api
+```
 
 ### Passo 2: Instalar Dependências
 ```bash
@@ -63,31 +70,27 @@ npm install
 ```
 
 ### Passo 3: Iniciar o Sistema
-Para sua facilidade, existe um arquivo de lote para Windows que inicia tudo de uma vez:
+O banco de dados irá auto-configurar as tabelas e índices necessários ao iniciar o servidor (Graças às migrações automáticas!).
+
 ```bash
-# Basta clicar duas vezes em:
-iniciar_financas.bat
-```
-Ou manualmente:
-```bash
-# Terminal 1 (Servidor)
+# Terminal 1 (Servidor Backend)
 npm run server
 
 # Terminal 2 (Frontend)
 npm run dev
 ```
+> Opcional: Se estiver no Windows, basta duplo-clique no script `iniciar_financas.bat`.
 
 ---
 
-## 📝 Atualizações Recentes
+## 📝 Maturidade do Projeto e Atualizações Recentes
 
-- ✅ **Autenticação e Segurança**: Sistema completo de Login e Registro com senhas criptografadas (Bcrypt) e JWT, garantindo que suas contas e dados fiquem privados e seguros.
-- ✅ **Integração de Configurações**: Menu de configurações funcional com persistência no banco de dados, integrado com as permissões do usuário logado.
-- ✅ **Modo Escuro Verdadeiro**: Implementado o suporte a tema dinâmico, salvo nas preferências do usuário.
-- ✅ **Relatórios**: Implementada a exportação de transações em PDF.
-- ✅ **Inteligência de Comparativo**: Calculadora da diferença percentual de gastos entre meses.
-- ✅ **Estabilidade de Orçamentos**: Sincronização em tempo real entre transações realizadas e limites de orçamento.
+- 🔐 **Segurança Hardening**: Autenticação por JWT, Cors configurado, senhas encriptadas via Bcrypt e Isolamento de Dados Per-User (Nenhum usuário toca as finanças do outro).
+- ⚡ **Performance e Lazy Loading**: As métricas de *First Contentful Paint* (FCP) saltaram com as páginas modulares e React Query servindo dados do cache imediatamente sem loadings intermináveis. Adicionado indexação no SQL no PostgreSQL!
+- 🎨 **UX Premium**: Micro-animações super fluidas, painéis modernos com Dark Mode que é salvo dinamicamente por banco e Flash Cards interativos quando uma transação nova ganha destaque (verde).
+- 📄 **Exportação de Relatórios**: O sistema consolida as métricas na visualização atual e cospe um documento corporativo em PDF estruturado.
+- 🎯 **Conectividade em Tempo Real Simulado**: A manipulação mágica no core de estados recarrega transações assim que você modifica gráficos, adiciona um orçamento ou zera uma meta.
 
 ---
 
-Desenvolvido com foco em UX/UI para transformar a gestão financeira em algo simples e agradável. 🚀
+Desenvolvido para provar que a união de UX excelente com uma fundação robusta de desenvolvimento full-stack resulta em ferramentas poderosas. 🚀
