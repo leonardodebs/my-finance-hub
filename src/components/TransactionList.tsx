@@ -18,7 +18,7 @@ export function TransactionList() {
     load();
   }, []);
 
-  const sorted = [...txns].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sorted = [...txns].reverse().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleAdd = async (t: Omit<Transaction, "id">) => {
     const saved = await saveTransactions(t);
