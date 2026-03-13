@@ -4,8 +4,15 @@ import { formatCurrency, type Budget } from "@/data/financeData";
 import { useBudgets, useAddBudget, useDeleteBudget } from "@/hooks/useFinance";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Info, Loader2, Trash2 } from "lucide-react";
+import { PlusCircle, Info, Loader2, Trash2, Utensils, Film, Car, Home, Target } from "lucide-react";
 import { AddBudgetModal } from "@/components/AddBudgetModal";
+
+const iconMap: Record<string, React.ElementType> = {
+  utensils: Utensils,
+  film: Film,
+  car: Car,
+  home: Home
+};
 
 export default function Budgets() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,6 +66,7 @@ export default function Budgets() {
           const percent = Math.min(Math.round((budget.spent / budget.limit_amount) * 100), 100);
           const isNearLimit = percent > 85;
           const isOverLimit = Number(budget.spent) > Number(budget.limit_amount);
+          const Icon = iconMap[budget.icon] || Target;
 
           return (
             <motion.div
@@ -70,8 +78,8 @@ export default function Budgets() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-xl">
-                    {budget.icon}
+                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-primary">
+                    <Icon className="h-5 w-5" />
                   </div>
                 <div>
                   <h3 className="font-semibold">{budget.category}</h3>

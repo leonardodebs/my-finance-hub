@@ -4,11 +4,11 @@ import { formatCurrency, type Goal } from "@/data/financeData";
 import { useGoals, useAddGoal, useDeleteGoal } from "@/hooks/useFinance";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Target, TrendingUp, Wallet, Plane, Car, Home, Gift, Loader2, Trash2 } from "lucide-react";
+import { Target, TrendingUp, Wallet, Plane, Car, Home, Gift, Loader2, Trash2, Shield } from "lucide-react";
 import { AddGoalModal } from "@/components/AddGoalModal";
 
 const iconMap: Record<string, React.ElementType> = {
-  Wallet, Plane, TrendingUp, Car, Home, Gift, Target
+  wallet: Wallet, plane: Plane, trendingup: TrendingUp, car: Car, home: Home, gift: Gift, target: Target, shield: Shield
 };
 
 export default function Goals() {
