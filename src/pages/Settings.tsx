@@ -6,13 +6,15 @@ import { Switch } from "@/components/ui/switch";
 import { User, Bell, Shield, Palette, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { getSettings, saveSettings, type UserSettings } from "@/data/financeData";
+import { type UserSettings } from "@/data/financeData";
+import { useSettings, useUpdateSettings } from "@/hooks/useFinance";
 import { useTheme } from "next-themes";
 
 export default function Settings() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const { setTheme } = useTheme();
+  const { data: serverSettings, isLoading: loading } = useSettings();
+  const updateSettingsMutation = useUpdateSettings();
+  
   const [settings, setSettings] = useState<UserSettings>({
     name: "Leonardo",
     email: "leonardo@exemplo.com",
@@ -22,24 +24,21 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    const loadSettings = async () => {
-      const data = await getSettings();
-      setSettings(data);
-      setTheme(data.dark_mode ? "dark" : "light");
-      setLoading(false);
-    };
-    loadSettings();
-  }, [setTheme]);
+    if (serverSettings) {
+      setSettings(serverSettings);
+      setTheme(serverSettings.dark_mode ? "dark" : "light");
+    }
+  }, [serverSettings, setTheme]);
 
   const handleSave = async () => {
-    setSaving(true);
-    const result = await saveSettings(settings);
-    if (result) {
-      toast.success("Configurações salvas com sucesso!");
-    } else {
-      toast.error("Erro ao salvar configurações.");
-    }
-    setSaving(false);
+    updateSettingsMutation.mutate(settings, {
+      onSuccess: () => {
+        toast.success("Configurações salvas com sucesso!");
+      },
+      onError: () => {
+        toast.error("Erro ao salvar configurações.");
+      }
+    });
   };
 
   const updateSetting = (key: keyof UserSettings, value: string | boolean) => {
@@ -67,9 +66,9 @@ export default function Settings() {
         <Button 
           className="hidden sm:flex gap-2" 
           onClick={handleSave} 
-          disabled={saving}
+          disabled={updateSettingsMutation.isPending}
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {updateSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Salvar Tudo
         </Button>
       </div>
@@ -166,9 +165,9 @@ export default function Settings() {
           <Button 
             className="w-full gap-2" 
             onClick={handleSave} 
-            disabled={saving}
+            disabled={updateSettingsMutation.isPending}
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {updateSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Salvar Alterações
           </Button>
         </div>

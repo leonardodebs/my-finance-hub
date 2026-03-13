@@ -1,21 +1,11 @@
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { getBudgets, formatCurrency, type Budget } from "@/data/financeData";
+import { formatCurrency, type Budget } from "@/data/financeData";
+import { useBudgets } from "@/hooks/useFinance";
 
 const COLORS = ['#eab308', '#10b981', '#a855f7', '#3b82f6'];
 
 export function BudgetStatus() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-
-  useEffect(() => {
-    const load = () => {
-      getBudgets().then(setBudgets);
-    };
-    load();
-
-    window.addEventListener('transactionsChanged', load);
-    return () => window.removeEventListener('transactionsChanged', load);
-  }, []);
+  const { data: budgets = [], isLoading } = useBudgets();
 
   return (
     <motion.div

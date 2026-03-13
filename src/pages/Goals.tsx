@@ -1,43 +1,31 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { getGoals, saveGoal, deleteGoal, formatCurrency, type Goal } from "@/data/financeData";
+import { formatCurrency, type Goal } from "@/data/financeData";
+import { useGoals, useAddGoal, useDeleteGoal } from "@/hooks/useFinance";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Target, TrendingUp, Wallet, Plane, Car, Home, Gift, Loader2, Trash2 } from "lucide-react";
 import { AddGoalModal } from "@/components/AddGoalModal";
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ElementType> = {
   Wallet, Plane, TrendingUp, Car, Home, Gift, Target
 };
 
 export default function Goals() {
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      const data = await getGoals();
-      setGoals(data);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const { data: goals = [], isLoading: loading } = useGoals();
+  const addGoalMutation = useAddGoal();
+  const deleteGoalMutation = useDeleteGoal();
 
   const handleAdd = async (g: Omit<Goal, "id">) => {
-    const saved = await saveGoal(g);
-    if (saved) {
-      setGoals(prev => [...prev, saved]);
-      setModalOpen(false);
-    }
+    addGoalMutation.mutate(g, {
+      onSuccess: () => setModalOpen(false)
+    });
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir esta meta?")) {
-      const success = await deleteGoal(id);
-      if (success) {
-        setGoals(prev => prev.filter(g => g.id !== id));
-      }
+      deleteGoalMutation.mutate(id);
     }
   };
 

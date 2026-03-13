@@ -56,6 +56,7 @@ export const exportTransactionsToPDF = (txns: Transaction[]) => {
   autoTable(doc, {
     startY: 75,
     head: [["Descrição", "Categoria", "Data", "Valor", "Tipo"]],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body: tableRows as any,
     headStyles: { 
       fillColor: [79, 70, 229], // Primary color
@@ -74,6 +75,7 @@ export const exportTransactionsToPDF = (txns: Transaction[]) => {
   });
 
   // Footer
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pageCount = (doc.internal as any).getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);

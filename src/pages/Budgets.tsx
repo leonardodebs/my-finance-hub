@@ -1,47 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { getBudgets, saveBudget, deleteBudget, formatCurrency, type Budget } from "@/data/financeData";
+import { formatCurrency, type Budget } from "@/data/financeData";
+import { useBudgets, useAddBudget, useDeleteBudget } from "@/hooks/useFinance";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Info, Loader2, Trash2 } from "lucide-react";
 import { AddBudgetModal } from "@/components/AddBudgetModal";
 
 export default function Budgets() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      const data = await getBudgets();
-      setBudgets(data);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const { data: budgets = [], isLoading: loading } = useBudgets();
+  const addBudgetMutation = useAddBudget();
+  const deleteBudgetMutation = useDeleteBudget();
 
   const handleAdd = async (b: Omit<Budget, "id" | "spent">) => {
-    const saved = await saveBudget(b);
-    if (saved) {
-      setBudgets(prev => {
-        const index = prev.findIndex(p => p.category === saved.category);
-        if (index >= 0) {
-          const newBudgets = [...prev];
-          newBudgets[index] = { ...saved, spent: prev[index].spent };
-          return newBudgets;
-        }
-        return [...prev, { ...saved, spent: 0 }];
-      });
-      setModalOpen(false);
-    }
+    addBudgetMutation.mutate(b, {
+      onSuccess: () => {
+        setModalOpen(false);
+      }
+    });
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir este orçamento?")) {
-      const success = await deleteBudget(id);
-      if (success) {
-        setBudgets(prev => prev.filter(b => b.id !== id));
-      }
+      deleteBudgetMutation.mutate(id);
     }
   };
 

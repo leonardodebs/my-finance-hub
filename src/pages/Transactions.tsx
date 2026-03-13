@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  getTransactions, 
-  deleteTransaction, 
   formatCurrency, 
   type Transaction 
 } from "@/data/financeData";
+import { useTransactions, useDeleteTransaction } from "@/hooks/useFinance";
 import { exportTransactionsToPDF } from "@/data/pdfExport";
 import { 
   Search, 
@@ -39,27 +38,15 @@ import {
 type Period = "all" | "7days" | "30days" | "thisMonth" | "lastMonth" | "thisYear";
 
 export default function Transactions() {
-  const [txns, setTxns] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: txns = [], isLoading: loading } = useTransactions();
+  const deleteTransactionMutation = useDeleteTransaction();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "revenue" | "expense">("all");
   const [periodFilter, setPeriodFilter] = useState<Period>("all");
 
-  useEffect(() => {
-    const load = async () => {
-      const data = await getTransactions();
-      setTxns(data);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir esta transação?")) {
-      const success = await deleteTransaction(id);
-      if (success) {
-        setTxns(prev => prev.filter(t => t.id !== id));
-      }
+      deleteTransactionMutation.mutate(id);
     }
   };
 

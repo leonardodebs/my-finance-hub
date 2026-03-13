@@ -4,6 +4,7 @@ import { formatCurrency, type Transaction } from "@/data/financeData";
 import { format, subMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (

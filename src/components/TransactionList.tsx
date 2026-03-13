@@ -1,48 +1,18 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getTransactions, saveTransactions, deleteTransaction, formatCurrency, type Transaction } from "@/data/financeData";
-import { Plus, Loader2, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import { AddTransactionModal } from "./AddTransactionModal";
+import { formatCurrency, type Transaction } from "@/data/financeData";
+import { Loader2, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { useTransactions, useDeleteTransaction } from "@/hooks/useFinance";
 
 export function TransactionList() {
-  const [txns, setTxns] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      const data = await getTransactions();
-      setTxns(data);
-      setLoading(false);
-    };
-    load();
-
-    const handleTransactionChange = () => {
-      load();
-    };
-
-    window.addEventListener('transactionsChanged', handleTransactionChange);
-    return () => window.removeEventListener('transactionsChanged', handleTransactionChange);
-  }, []);
+  const { data: txns = [], isLoading: loading } = useTransactions();
+  const deleteTransactionMutation = useDeleteTransaction();
 
   const sorted = [...txns].reverse().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const handleAdd = async (t: Omit<Transaction, "id">) => {
-    const saved = await saveTransactions(t);
-    if (saved) {
-      setTxns((prev) => [{ ...saved, isNew: true }, ...prev]);
-      setModalOpen(false);
-      window.dispatchEvent(new Event('transactionsChanged'));
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir esta transação?")) {
-      const success = await deleteTransaction(id);
-      if (success) {
-        setTxns(prev => prev.filter(t => t.id !== id));
-        window.dispatchEvent(new Event('transactionsChanged'));
-      }
+      deleteTransactionMutation.mutate(id);
     }
   };
 

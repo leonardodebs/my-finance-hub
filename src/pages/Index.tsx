@@ -6,49 +6,30 @@ import { BudgetStatus } from "@/components/BudgetStatus";
 import { TransactionList } from "@/components/TransactionList";
 import { RevenueVsExpenseChart } from "@/components/RevenueVsExpenseChart";
 
-import { useEffect, useState } from "react";
-import { getTransactions, saveTransactions, calculateTotals, type Transaction } from "@/data/financeData";
+import { useEffect, useState, useMemo } from "react";
+import { calculateTotals, type Transaction } from "@/data/financeData";
+import { useTransactions, useAddTransaction } from "@/hooks/useFinance";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddTransactionModal } from "@/components/AddTransactionModal";
 
 const Index = () => {
-  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [data, setData] = useState<ReturnType<typeof calculateTotals>>({
-    totalRevenue: 0,
-    totalExpenses: 0,
-    currentBalance: 0,
-    categoryExpenses: [],
-  });
-  const [monthlyTxns, setMonthlyTxns] = useState<Transaction[]>([]);
+  const { data: txns = [], isLoading, isError } = useTransactions();
+  const addTransactionMutation = useAddTransaction();
 
-  useEffect(() => {
-    const load = async () => {
-      const txns = await getTransactions();
-      setData(calculateTotals(txns));
-      setMonthlyTxns(txns);
-      setLoading(false);
-    };
-    load();
-
-    const handleTransactionChange = () => {
-      load();
-    };
-
-    window.addEventListener('transactionsChanged', handleTransactionChange);
-    return () => window.removeEventListener('transactionsChanged', handleTransactionChange);
-  }, []);
+  const data = useMemo(() => calculateTotals(txns || []), [txns]);
+  const monthlyTxns = useMemo(() => txns || [], [txns]);
 
   const handleAdd = async (t: Omit<Transaction, "id">) => {
-    const saved = await saveTransactions(t);
-    if (saved) {
-      setModalOpen(false);
-      window.dispatchEvent(new Event('transactionsChanged'));
-    }
+    addTransactionMutation.mutate(t, {
+      onSuccess: () => {
+        setModalOpen(false);
+      }
+    });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

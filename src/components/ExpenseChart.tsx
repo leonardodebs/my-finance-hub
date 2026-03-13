@@ -4,6 +4,7 @@ import { formatCurrency, type CategoryExpense } from "@/data/financeData";
 
 const COLORS = ['#a855f7', '#eab308', '#ef4444', '#3b82f6', '#f97316', '#64748b', '#ec4899', '#06b6d4'];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
