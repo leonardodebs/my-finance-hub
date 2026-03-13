@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Goal } from "@/data/financeData";
 import { Button } from "./ui/button";
-import { Wallet, Plane, TrendingUp, Car, Home, Gift } from "lucide-react";
+import { Wallet, Plane, TrendingUp, Car, Home, Gift, Shield, Target } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -11,12 +11,14 @@ interface Props {
 }
 
 const icons = [
-  { name: "Wallet", icon: Wallet, color: "text-blue-500", bg: "bg-blue-500/10" },
-  { name: "Plane", icon: Plane, color: "text-purple-500", bg: "bg-purple-500/10" },
-  { name: "TrendingUp", icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
-  { name: "Car", icon: Car, color: "text-orange-500", bg: "bg-orange-500/10" },
-  { name: "Home", icon: Home, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-  { name: "Gift", icon: Gift, color: "text-pink-500", bg: "bg-pink-500/10" },
+  { name: "wallet", icon: Wallet, color: "text-blue-500", bg: "bg-blue-500/10" },
+  { name: "plane", icon: Plane, color: "text-purple-500", bg: "bg-purple-500/10" },
+  { name: "trendingup", icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
+  { name: "car", icon: Car, color: "text-orange-500", bg: "bg-orange-500/10" },
+  { name: "home", icon: Home, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+  { name: "gift", icon: Gift, color: "text-pink-500", bg: "bg-pink-500/10" },
+  { name: "shield", icon: Shield, color: "text-teal-500", bg: "bg-teal-500/10" },
+  { name: "target", icon: Target, color: "text-red-500", bg: "bg-red-500/10" },
 ];
 
 export function AddGoalModal({ open, onClose, onAdd }: Props) {
