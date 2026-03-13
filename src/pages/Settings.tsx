@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { type UserSettings } from "@/data/financeData";
 import { useSettings, useUpdateSettings } from "@/hooks/useFinance";
 import { useTheme } from "next-themes";
+import { AdminSection } from "@/components/AdminSection";
 
 export default function Settings() {
   const { setTheme } = useTheme();
@@ -22,6 +23,10 @@ export default function Settings() {
     weekly_summary: true,
     dark_mode: false,
   });
+
+  const currentUserStr = localStorage.getItem("user");
+  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+  const isAdmin = currentUser?.is_admin === true;
 
   useEffect(() => {
     if (serverSettings) {
@@ -160,6 +165,8 @@ export default function Settings() {
           </div>
           <Button variant="destructive">Excluir Conta</Button>
         </section>
+
+        {isAdmin && <AdminSection />}
 
         <div className="flex sm:hidden pt-4">
           <Button 

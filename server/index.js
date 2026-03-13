@@ -50,6 +50,7 @@ pool.query('SELECT NOW()', async (err, res) => {
           name VARCHAR(255) NOT NULL,
           email VARCHAR(255) UNIQUE NOT NULL,
           password VARCHAR(255) NOT NULL,
+          is_admin BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -120,6 +121,21 @@ pool.query('SELECT NOW()', async (err, res) => {
         `).catch(() => {});
       }
 
+      // Migration para adicionar is_admin na tabela users se não existir
+      await pool.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='is_admin') THEN
+            ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+            
+            -- Set the earliest created user as admin for the tests
+          END IF;
+          
+          -- Garantir que pelo menos o usuário de ID 1 tenha isAdmin
+          UPDATE users SET is_admin = TRUE WHERE id = (SELECT MIN(id) FROM users);
+        END $$;
+      `).catch(() => {});
+
       console.log('Tabelas de isolamento Multi-user criadas com sucesso');
 
       // Setup Indexes for Performance Optimization
@@ -155,7 +171,7 @@ app.post('/api/register', async (req, res) => {
       [name, email, hashedPassword]
     );
 
-    const token = jwt.sign({ userId: newUser.rows[0].id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: newUser.rows[0].id, isAdmin: newUser.rows[0].is_admin }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: newUser.rows[0] });
   } catch (err) {
     console.error(err);
@@ -176,8 +192,65 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Credenciais inválidas' });
     }
 
-    const token = jwt.sign({ userId: user.rows[0].id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.rows[0].id, name: user.rows[0].name, email: user.rows[0].email } });
+    const token = jwt.sign({ userId: user.rows[0].id, isAdmin: user.rows[0].is_admin }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.rows[0].id, name: user.rows[0].name, email: user.rows[0].email, is_admin: user.rows[0].is_admin } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin Middleware
+const verifyAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Acesso negado: Requer privilégios de administrador' });
+  }
+  next();
+};
+
+// Admin Routes for User Management
+app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, email, is_admin, created_at FROM users ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { name, email, is_admin } = req.body;
+  try {
+    if (String(req.user.userId) === String(id) && is_admin === false) {
+      return res.status(400).json({ error: 'Você não pode remover seus próprios privilégios de administrador.' });
+    }
+    
+    const result = await pool.query(
+      'UPDATE users SET name = $1, email = $2, is_admin = $3 WHERE id = $4 RETURNING id, name, email, is_admin',
+      [name, email, is_admin, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (String(req.user.userId) === String(id)) {
+      return res.status(400).json({ error: 'Você não pode excluir sua própria conta por aqui.' });
+    }
+    await pool.query('DELETE FROM settings WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM transactions WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM budgets WHERE user_id = $1', [id]);
+    await pool.query('DELETE FROM goals WHERE user_id = $1', [id]);
+    
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ message: 'User deleted successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
