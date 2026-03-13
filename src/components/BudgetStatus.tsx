@@ -8,7 +8,13 @@ export function BudgetStatus() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
   useEffect(() => {
-    getBudgets().then(setBudgets);
+    const load = () => {
+      getBudgets().then(setBudgets);
+    };
+    load();
+
+    window.addEventListener('transactionsChanged', load);
+    return () => window.removeEventListener('transactionsChanged', load);
   }, []);
 
   return (

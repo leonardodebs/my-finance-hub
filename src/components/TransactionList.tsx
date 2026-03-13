@@ -16,6 +16,13 @@ export function TransactionList() {
       setLoading(false);
     };
     load();
+
+    const handleTransactionChange = () => {
+      load();
+    };
+
+    window.addEventListener('transactionsChanged', handleTransactionChange);
+    return () => window.removeEventListener('transactionsChanged', handleTransactionChange);
   }, []);
 
   const sorted = [...txns].reverse().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
