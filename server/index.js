@@ -121,6 +121,19 @@ pool.query('SELECT NOW()', async (err, res) => {
       }
 
       console.log('Tabelas de isolamento Multi-user criadas com sucesso');
+
+      // Setup Indexes for Performance Optimization
+      const createIndexes = [
+        'CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions (user_id);',
+        'CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions (user_id, date DESC);',
+        'CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets (user_id);',
+        'CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals (user_id);'
+      ];
+      
+      for (const idxQuery of createIndexes) {
+        await pool.query(idxQuery).catch(() => {});
+      }
+      console.log('Database indexes applied for performance');
     } catch (tableErr) {
       console.error('Error creating tables:', tableErr);
     }

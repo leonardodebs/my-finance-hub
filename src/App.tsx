@@ -3,15 +3,18 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import React, { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
-import Index from "./pages/Index.tsx";
-import Transactions from "./pages/Transactions.tsx";
-import Budgets from "./pages/Budgets.tsx";
-import Goals from "./pages/Goals.tsx";
-import Settings from "./pages/Settings.tsx";
-import Login from "./pages/Login.tsx";
-import Register from "./pages/Register.tsx";
-import NotFound from "./pages/NotFound.tsx";
+
+// Lazy-loaded pages
+const Index = lazy(() => import("./pages/Index.tsx"));
+const Transactions = lazy(() => import("./pages/Transactions.tsx"));
+const Budgets = lazy(() => import("./pages/Budgets.tsx"));
+const Goals = lazy(() => import("./pages/Goals.tsx"));
+const Settings = lazy(() => import("./pages/Settings.tsx"));
+const Login = lazy(() => import("./pages/Login.tsx"));
+const Register = lazy(() => import("./pages/Register.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 import { DashboardLayout } from "./components/DashboardLayout.tsx";
 
 const queryClient = new QueryClient();
@@ -32,21 +35,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/registro" element={<Register />} />
-            
-            <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/transacoes" element={<Transactions />} />
-              <Route path="/orcamentos" element={<Budgets />} />
-              <Route path="/metas" element={<Goals />} />
-              <Route path="/configuracoes" element={<Settings />} />
-            </Route>
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Carregando...</div>}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/registro" element={<Register />} />
+              
+              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                <Route path="/" element={<Index />} />
+                <Route path="/transacoes" element={<Transactions />} />
+                <Route path="/orcamentos" element={<Budgets />} />
+                <Route path="/metas" element={<Goals />} />
+                <Route path="/configuracoes" element={<Settings />} />
+              </Route>
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
