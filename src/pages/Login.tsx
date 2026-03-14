@@ -49,13 +49,10 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex flex-col items-center mb-8">
-          <div className="h-12 w-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-4">
-            <Wallet className="h-6 w-6" />
+          <div className="h-20 w-20 rounded-2xl flex items-center justify-center mb-6 overflow-hidden">
+            <img src="/logo.png" alt="Logo" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Bem-vindo de volta</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Entre para gerenciar suas finanças
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">My Finance Hub</h1>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
