@@ -105,4 +105,10 @@ Caso queira testar o app já com centenas de transações, gráficos populados e
 
 ---
 
-Desenvolvido para provar que a união de UX excelente com uma fundação robusta de desenvolvimento full-stack resulta em ferramentas poderosas. 🚀
+## 🤖 Desenvolvimento com IA
+
+Este projeto contou com a "mão" (ou o processamento) de uma tecnologia de ponta: foi desenvolvido e aprimorado em parceria com o **Google Antigravity**, utilizando o poder do **Google Gemini**. A IA atuou como programadora real em todas as etapas, desde a arquitetura do banco de dados até o refino das micro-animações da interface.
+
+---
+
+Desenvolvido para provar que a união de tecnologia de IA avançada com uma visão robusta de desenvolvimento full-stack resulta em ferramentas poderosas. 🚀
