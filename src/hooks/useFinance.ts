@@ -3,6 +3,7 @@ import {
   getTransactions, 
   saveTransactions, 
   deleteTransaction, 
+  updateTransaction,
   getBudgets, 
   saveBudget, 
   deleteBudget,
@@ -40,6 +41,17 @@ export const useDeleteTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteTransaction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    },
+  });
+};
+
+export const useUpdateTransaction = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, txn }: { id: string; txn: Omit<Transaction, 'id'> }) => updateTransaction(id, txn),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });

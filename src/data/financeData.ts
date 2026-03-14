@@ -92,6 +92,20 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
   }
 };
 
+export const updateTransaction = async (id: string, txn: Omit<Transaction, "id">): Promise<Transaction | null> => {
+  try {
+    const response = await apiFetch(`/transactions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(txn),
+    });
+    if (!response.ok) throw new Error("Failed to update transaction");
+    return await response.json();
+  } catch (err) {
+    console.error("Error updating transaction:", err);
+    return null;
+  }
+};
+
 // BUDGETS
 export const getBudgets = async (): Promise<Budget[]> => {
   try {

@@ -293,6 +293,24 @@ app.delete('/api/transactions/:id', verifyToken, async (req, res) => {
   }
 });
 
+app.put('/api/transactions/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { description, category, amount, type, date } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE transactions SET description = $1, category = $2, amount = $3, type = $4, date = $5 WHERE id = $6 AND (user_id = $7 OR user_id IS NULL) RETURNING *',
+      [description, category, amount, type, date, id, req.user.userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Transação não encontrada ou sem permissão' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // BUDGETS
 app.get('/api/budgets', verifyToken, async (req, res) => {
   try {

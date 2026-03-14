@@ -4,7 +4,7 @@ import {
   formatCurrency, 
   type Transaction 
 } from "@/data/financeData";
-import { useTransactions, useDeleteTransaction } from "@/hooks/useFinance";
+import { useTransactions, useDeleteTransaction, useUpdateTransaction } from "@/hooks/useFinance";
 import { exportTransactionsToPDF } from "@/data/pdfExport";
 import { 
   Search, 
@@ -13,11 +13,13 @@ import {
   ArrowDownLeft, 
   Loader2, 
   Trash2, 
+  Pencil,
   Download,
   Calendar,
   FileText
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { EditTransactionModal } from "@/components/EditTransactionModal";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -40,14 +42,30 @@ type Period = "all" | "7days" | "30days" | "thisMonth" | "lastMonth" | "thisYear
 export default function Transactions() {
   const { data: txns = [], isLoading: loading } = useTransactions();
   const deleteTransactionMutation = useDeleteTransaction();
+  const updateTransactionMutation = useUpdateTransaction();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "revenue" | "expense">("all");
   const [periodFilter, setPeriodFilter] = useState<Period>("all");
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir esta transação?")) {
       deleteTransactionMutation.mutate(id);
     }
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdate = (id: string, txn: Omit<Transaction, "id">) => {
+    updateTransactionMutation.mutate({ id, txn }, {
+      onSuccess: () => {
+        setIsEditModalOpen(false);
+      }
+    });
   };
 
   const filteredTransactions = [...txns]
@@ -187,14 +205,24 @@ export default function Transactions() {
                     {t.type === "revenue" ? "+" : "−"}{formatCurrency(t.amount)}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-expense"
-                      onClick={() => handleDelete(t.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-indigo-400"
+                        onClick={() => handleEdit(t)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-expense"
+                        onClick={() => handleDelete(t.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -207,6 +235,13 @@ export default function Transactions() {
           </div>
         )}
       </motion.div>
+
+      <EditTransactionModal 
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdate={handleUpdate}
+        transaction={editingTransaction}
+      />
     </div>
   );
 }
