@@ -23,6 +23,7 @@ Um centro de controle financeiro moderno, intuitivo e completo para gestão de g
 ### ⚙️ Personalização
 - **Perfil de Usuário**: Gestão de informações básicas (Nome e E-mail).
 - **Preferências do App**: Ativação/Desativação de alertas de orçamento e resumos semanais.
+- **Gestão de Categorias Dinâmicas**: Crie suas próprias categorias de Receita e Despesa diretamente nas configurações, expandindo a flexibilidade do sistema para seu estilo de vida.
 - **Modo Visual**: Suporte completo a **Modo Escuro (Dark Mode)** para melhor conforto visual.
 
 ### 🛡️ Gestão de Usuários (Admin)
@@ -101,6 +102,7 @@ Caso queira testar o app já com centenas de transações, gráficos populados e
 - ⚡ **Performance e Lazy Loading**: As métricas de *First Contentful Paint* (FCP) saltaram com as páginas modulares e React Query servindo dados do cache imediatamente.
 - 👑 **Admin Control**: Adicionado painel de super-usuário para controle de usuários e segurança em cascata no banco de dados.
 - 🎨 **UX Premium**: Micro-animações fluidas, Dark Mode persistente e Logotipo renovado para uma experiência profissional.
+- 🏷️ **Categorias Dinâmicas**: Implementação de sistema CRUD para categorias personalizadas com persistência em banco de dados e isolamento por usuário.
 - 📄 **Exportação de Relatórios**: O sistema consolida as métricas na visualização atual e gera documentos PDF estruturados.
 
 ---
