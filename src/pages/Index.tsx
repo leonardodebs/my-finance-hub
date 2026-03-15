@@ -12,23 +12,39 @@ import { useTransactions, useAddTransaction } from "@/hooks/useFinance";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddTransactionModal } from "@/components/AddTransactionModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "lucide-react";
 
 const Index = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: txns = [], isLoading, isError } = useTransactions();
   const addTransactionMutation = useAddTransaction();
 
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  const months = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const startYear = 2023; // Início razoável
+    const yearsArray = [];
+    for (let y = currentYear + 1; y >= startYear; y--) {
+      yearsArray.push(y);
+    }
+    return yearsArray;
+  }, []);
+
   const currentMonthTxns = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
     return txns.filter(t => {
       const d = new Date(t.date);
-      // Ajuste para lidar com timezone local se necessário, mas o padrão do input date é YYYY-MM-DD
-      return d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
+      return d.getUTCMonth() === selectedMonth && d.getUTCFullYear() === selectedYear;
     });
-  }, [txns]);
+  }, [txns, selectedMonth, selectedYear]);
 
   const data = useMemo(() => calculateTotals(currentMonthTxns), [currentMonthTxns]);
   const monthlyTxns = currentMonthTxns;
@@ -54,7 +70,31 @@ const Index = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground dark:text-white mb-1">Finanças Pessoais</h1>
-          <p className="text-muted-foreground text-sm">Visão geral do mês atual</p>
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <p className="text-sm">Visão geral de</p>
+            <div className="flex items-center gap-2">
+              <Select value={selectedMonth.toString()} onValueChange={(val) => setSelectedMonth(parseInt(val))}>
+                <SelectTrigger className="h-8 w-[130px] bg-transparent border-none p-0 focus:ring-0 font-medium text-primary">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((m, i) => (
+                    <SelectItem key={i} value={i.toString()}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
+                <SelectTrigger className="h-8 w-[80px] bg-transparent border-none p-0 focus:ring-0 font-medium text-primary">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(y => (
+                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
         <Button 
           variant="outline"
