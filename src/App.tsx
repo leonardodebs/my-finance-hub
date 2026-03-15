@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import React, { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
+import { DateProvider } from "@/contexts/DateContext";
 
 // Lazy-loaded pages
 const Index = lazy(() => import("./pages/Index.tsx"));
@@ -31,29 +32,31 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Carregando...</div>}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/registro" element={<Register />} />
-              
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route path="/" element={<Index />} />
-                <Route path="/transacoes" element={<Transactions />} />
-                <Route path="/orcamentos" element={<Budgets />} />
-                <Route path="/metas" element={<Goals />} />
-                <Route path="/configuracoes" element={<Settings />} />
-              </Route>
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+      <DateProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Carregando...</div>}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/registro" element={<Register />} />
+                
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/transacoes" element={<Transactions />} />
+                  <Route path="/orcamentos" element={<Budgets />} />
+                  <Route path="/metas" element={<Goals />} />
+                  <Route path="/configuracoes" element={<Settings />} />
+                </Route>
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DateProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
