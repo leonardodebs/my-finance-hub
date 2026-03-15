@@ -108,8 +108,19 @@ pool.query('SELECT NOW()', async (err, res) => {
         );
       `);
 
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS categories (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id),
+          name VARCHAR(255) NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, name, type)
+        );
+      `);
+
       // Migration para injetar user_id no banco legado garantindo o novo isolation
-      const tables = ['transactions', 'budgets', 'goals', 'settings'];
+      const tables = ['transactions', 'budgets', 'goals', 'settings', 'categories'];
       for (const table of tables) {
         await pool.query(`
           DO $$
@@ -393,6 +404,45 @@ app.delete('/api/goals/:id', verifyToken, async (req, res) => {
   try {
     await pool.query('DELETE FROM goals WHERE id = $1 AND (user_id = $2 OR user_id IS NULL)', [id, req.user.userId]);
     res.json({ message: 'Goal deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// CATEGORIES
+app.get('/api/categories', verifyToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM categories WHERE user_id = $1 ORDER BY name ASC', [req.user.userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/categories', verifyToken, async (req, res) => {
+  const { name, type } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO categories (user_id, name, type) VALUES ($1, $2, $3) ON CONFLICT (user_id, name, type) DO NOTHING RETURNING *',
+      [req.user.userId, name, type]
+    );
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Categoria já existe' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/categories/:id', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM categories WHERE id = $1 AND user_id = $2', [id, req.user.userId]);
+    res.json({ message: 'Category deleted successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

@@ -2,35 +2,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Transaction } from "@/data/financeData";
 import { X, Calendar as CalendarIcon } from "lucide-react";
+import { useCategories } from "@/hooks/useFinance";
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_REVENUE_CATEGORIES } from "@/data/financeData";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onAdd: (t: Omit<Transaction, "id">) => void;
 }
-
-const expenseCategories = [
-  "Cartão crédito", 
-  "Combustível", 
-  "Alimentação", 
-  "Supermercado", 
-  "Carro",
-  "Corte cabelo", 
-  "Vivo celulares", 
-  "Internet casa", 
-  "Compras online", 
-  "Estacionamento", 
-  "Casa",
-  "Vestuário", 
-  "Farmácia", 
-  "Dividas",
-  "Presentes",
-  "Viagens",
-  "Educação",
-  "Lazer",
-  "Outros"
-];
-const revenueCategories = ["Salário", "Freelance", "Investimentos", "Outros"];
 
 export function AddTransactionModal({ open, onClose, onAdd }: Props) {
   const [desc, setDesc] = useState("");
@@ -41,7 +20,12 @@ export function AddTransactionModal({ open, onClose, onAdd }: Props) {
   const [obs, setObs] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const activeCategories = type === "revenue" ? revenueCategories : expenseCategories;
+  const { data: customCategories = [] } = useCategories();
+
+  const activeCategories = [
+    ...(type === "revenue" ? DEFAULT_REVENUE_CATEGORIES : DEFAULT_EXPENSE_CATEGORIES),
+    ...customCategories.filter(c => c.type === type).map(c => c.name)
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -10,6 +10,7 @@ import { type UserSettings } from "@/data/financeData";
 import { useSettings, useUpdateSettings } from "@/hooks/useFinance";
 import { useTheme } from "next-themes";
 import { AdminSection } from "@/components/AdminSection";
+import { CategoryManager } from "@/components/CategoryManager";
 
 export default function Settings() {
   const { setTheme } = useTheme();
@@ -156,6 +157,10 @@ export default function Settings() {
               onCheckedChange={(checked) => updateSetting("dark_mode", checked)}
             />
           </div>
+        </section>
+
+        <section className="space-y-4 pt-4">
+          <CategoryManager />
         </section>
 
         <section className="space-y-4 pt-4">

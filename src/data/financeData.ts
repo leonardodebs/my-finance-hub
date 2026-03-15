@@ -20,6 +20,12 @@ export interface Goal {
   bg_color: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  type: "revenue" | "expense";
+}
+
 export interface Budget {
   id: string;
   category: string;
@@ -32,6 +38,30 @@ export interface CategoryExpense {
   category: string;
   amount: number;
 }
+
+export const DEFAULT_EXPENSE_CATEGORIES = [
+  "Cartão crédito", 
+  "Combustível", 
+  "Alimentação", 
+  "Supermercado", 
+  "Carro",
+  "Corte cabelo", 
+  "Vivo celulares", 
+  "Internet casa", 
+  "Compras online", 
+  "Estacionamento", 
+  "Casa",
+  "Vestuário", 
+  "Farmácia", 
+  "Dividas",
+  "Presentes",
+  "Viagens",
+  "Educação",
+  "Lazer",
+  "Outros"
+];
+
+export const DEFAULT_REVENUE_CATEGORIES = ["Salário", "Freelance", "Investimentos", "Outros"];
 
 const API_URL = "http://localhost:3001/api";
 
@@ -174,6 +204,42 @@ export const deleteGoal = async (id: string): Promise<boolean> => {
     return response.ok;
   } catch (err) {
     console.error("Error deleting goal:", err);
+    return false;
+  }
+};
+
+// CATEGORIES
+export const getCategories = async (): Promise<Category[]> => {
+  try {
+    const response = await apiFetch('/categories');
+    if (!response.ok) throw new Error("Failed to fetch categories");
+    return await response.json();
+  } catch (err) {
+    console.error("Error fetching categories:", err);
+    return [];
+  }
+};
+
+export const saveCategory = async (category: Omit<Category, "id">): Promise<Category | null> => {
+  try {
+    const response = await apiFetch('/categories', {
+      method: "POST",
+      body: JSON.stringify(category),
+    });
+    if (!response.ok) throw new Error("Failed to save category");
+    return await response.json();
+  } catch (err) {
+    console.error("Error saving category:", err);
+    return null;
+  }
+};
+
+export const deleteCategory = async (id: string): Promise<boolean> => {
+  try {
+    const response = await apiFetch(`/categories/${id}`, { method: "DELETE" });
+    return response.ok;
+  } catch (err) {
+    console.error("Error deleting category:", err);
     return false;
   }
 };

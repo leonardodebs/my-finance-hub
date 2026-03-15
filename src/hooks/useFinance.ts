@@ -12,10 +12,14 @@ import {
   deleteGoal,
   getSettings,
   saveSettings,
+  getCategories,
+  saveCategory,
+  deleteCategory,
   type Transaction,
   type Budget,
   type Goal,
-  type UserSettings
+  type UserSettings,
+  type Category
 } from '@/data/financeData';
 
 // --- TRANSACTIONS ---
@@ -129,6 +133,34 @@ export const useUpdateSettings = () => {
     mutationFn: (settings: UserSettings) => saveSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+  });
+};
+
+// --- CATEGORIES ---
+export const useCategories = () => {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+};
+
+export const useAddCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (category: Omit<Category, 'id'>) => saveCategory(category),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+};
+
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCategory(id) as any,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 };
