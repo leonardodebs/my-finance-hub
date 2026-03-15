@@ -260,7 +260,7 @@ app.delete('/api/admin/users/:id', verifyToken, verifyAdmin, async (req, res) =>
 // Routes (Todas Protegidas por verifyToken)
 app.get('/api/transactions', verifyToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM transactions WHERE user_id = $1 OR user_id IS NULL ORDER BY date DESC', [req.user.userId]);
+    const result = await pool.query('SELECT * FROM transactions WHERE user_id = $1 OR user_id IS NULL ORDER BY date DESC, id DESC', [req.user.userId]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);

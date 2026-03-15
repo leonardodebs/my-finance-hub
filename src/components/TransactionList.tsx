@@ -8,7 +8,11 @@ export function TransactionList() {
   const { data: txns = [], isLoading: loading } = useTransactions();
   const deleteTransactionMutation = useDeleteTransaction();
 
-  const sorted = [...txns].reverse().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sorted = [...txns].sort((a, b) => {
+    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return Number(b.id) - Number(a.id);
+  });
 
   const handleDelete = async (id: string) => {
     if (confirm("Deseja realmente excluir esta transação?")) {

@@ -69,8 +69,11 @@ export default function Transactions() {
   };
 
   const filteredTransactions = [...txns]
-    .reverse()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => {
+      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return Number(b.id) - Number(a.id);
+    })
     .filter((t) => {
     const tDate = new Date(t.date);
     const now = new Date();
