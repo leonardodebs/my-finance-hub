@@ -9,7 +9,27 @@ interface Props {
   onAdd: (t: Omit<Transaction, "id">) => void;
 }
 
-const expenseCategories = ["Alimentação", "Transporte", "Moradia", "Saúde", "Educação", "Lazer", "Compras", "Contas", "Outros"];
+const expenseCategories = [
+  "Cartão crédito", 
+  "Combustível", 
+  "Alimentação", 
+  "Supermercado", 
+  "Carro",
+  "Corte cabelo", 
+  "Vivo celulares", 
+  "Internet casa", 
+  "Compras online", 
+  "Estacionamento", 
+  "Casa",
+  "Vestuário", 
+  "Farmácia", 
+  "Dividas",
+  "Presentes",
+  "Viagens",
+  "Educação",
+  "Lazer",
+  "Outros"
+];
 const revenueCategories = ["Salário", "Freelance", "Investimentos", "Outros"];
 
 export function AddTransactionModal({ open, onClose, onAdd }: Props) {
