@@ -24,16 +24,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 interface RevenueVsExpenseChartProps {
   transactions: Transaction[];
+  selectedMonth: number;
+  selectedYear: number;
 }
 
-export function RevenueVsExpenseChart({ transactions }: RevenueVsExpenseChartProps) {
-  // Aggregate data for the last 3 months
-  const now = new Date();
+export function RevenueVsExpenseChart({ transactions, selectedMonth, selectedYear }: RevenueVsExpenseChartProps) {
+  // Aggregate data for the 3 months ending in the selected month
+  const baseDate = new Date(selectedYear, selectedMonth, 1);
   
   const months = [
-    subMonths(now, 2),
-    subMonths(now, 1),
-    now,
+    subMonths(baseDate, 2),
+    subMonths(baseDate, 1),
+    baseDate,
   ];
 
   const data = months.map(month => {

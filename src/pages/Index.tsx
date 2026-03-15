@@ -67,7 +67,11 @@ const Index = () => {
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RevenueVsExpenseChart transactions={monthlyTxns} />
+        <RevenueVsExpenseChart 
+          transactions={txns} 
+          selectedMonth={selectedMonth} 
+          selectedYear={selectedYear} 
+        />
         <ExpenseChart data={data.categoryExpenses} />
       </div>
 
