@@ -18,8 +18,20 @@ const Index = () => {
   const { data: txns = [], isLoading, isError } = useTransactions();
   const addTransactionMutation = useAddTransaction();
 
-  const data = useMemo(() => calculateTotals(txns || []), [txns]);
-  const monthlyTxns = useMemo(() => txns || [], [txns]);
+  const currentMonthTxns = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return txns.filter(t => {
+      const d = new Date(t.date);
+      // Ajuste para lidar com timezone local se necessário, mas o padrão do input date é YYYY-MM-DD
+      return d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
+    });
+  }, [txns]);
+
+  const data = useMemo(() => calculateTotals(currentMonthTxns), [currentMonthTxns]);
+  const monthlyTxns = currentMonthTxns;
 
   const handleAdd = async (t: Omit<Transaction, "id">) => {
     addTransactionMutation.mutate(t, {
