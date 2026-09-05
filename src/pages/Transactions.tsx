@@ -46,6 +46,7 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "revenue" | "expense">("all");
   const [periodFilter, setPeriodFilter] = useState<Period>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -68,6 +69,15 @@ export default function Transactions() {
     });
   };
 
+  // Só as categorias que realmente aparecem nas transações, com a contagem.
+  // Listar o catálogo inteiro encheria o select de opções que não filtram nada.
+  const categoryOptions = Array.from(
+    txns.reduce((acc, t) => {
+      acc.set(t.category, (acc.get(t.category) || 0) + 1);
+      return acc;
+    }, new Map<string, number>())
+  ).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"));
+
   const filteredTransactions = [...txns]
     .sort((a, b) => {
       const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -81,7 +91,8 @@ export default function Transactions() {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           t.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === "all" || t.type === typeFilter;
-    
+    const matchesCategory = categoryFilter === "all" || t.category === categoryFilter;
+
     let matchesPeriod = true;
     // Fix: Add 1 day to 'now' boundaries to safely include timezone-skewed transactions (e.g. UTC date > local date)
     const safeNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -101,7 +112,7 @@ export default function Transactions() {
       matchesPeriod = isWithinInterval(tDate, { start: startOfYear(now), end: safeNow });
     }
 
-    return matchesSearch && matchesType && matchesPeriod;
+    return matchesSearch && matchesType && matchesCategory && matchesPeriod;
   });
 
   return (
@@ -131,6 +142,21 @@ export default function Transactions() {
         </div>
         
         <div className="flex flex-wrap gap-2">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[200px]">
+              <Filter className="mr-2 h-4 w-4 opacity-50" />
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categoryOptions.map(([name, count]) => (
+                <SelectItem key={name} value={name}>
+                  {name} ({count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as Period)}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="mr-2 h-4 w-4 opacity-50" />
