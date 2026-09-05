@@ -78,7 +78,17 @@ ssh "$SERVER" "kubectl apply -f '$REMOTE_DIR/k8s/00-namespace.yaml' >/dev/null &
 
 # --- 4. Aplica os manifestos ------------------------------------------------
 log "Aplicando manifestos"
+# .tpl fica de fora: o kubectl apply -f de diretório ignora a extensão.
 ssh "$SERVER" "kubectl apply -f '$REMOTE_DIR/k8s/'"
+
+# O CronJob de backup monta caminhos do host, que variam por máquina.
+# Só é aplicado se o ambiente disser onde eles ficam.
+if [[ -n "${BACKUP_MOUNT:-}" && -n "${TEXTFILE_DIR:-}" ]]; then
+  log "Aplicando CronJob de backup (BACKUP_MOUNT=$BACKUP_MOUNT)"
+  ssh "$SERVER" "BACKUP_MOUNT='$BACKUP_MOUNT' TEXTFILE_DIR='$TEXTFILE_DIR'     envsubst '\$BACKUP_MOUNT \$TEXTFILE_DIR'     < '$REMOTE_DIR/k8s/06-backup-cronjob.yaml.tpl' | kubectl apply -f -"
+else
+  log "BACKUP_MOUNT/TEXTFILE_DIR não definidos — CronJob de backup ignorado"
+fi
 
 # --- 5. Aponta os Deployments para a tag desta versão -----------------------
 # :latest com imagePullPolicy IfNotPresent não seria repuxado; a tag imutável força o rollout.
