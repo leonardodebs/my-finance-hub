@@ -5,6 +5,11 @@ const { Pool } = pkg;
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import multer from 'multer';
+import crypto from 'crypto';
+import { parseOfx } from './parsers/ofx.js';
+import { parseCsv } from './parsers/csv.js';
+import { suggestCategory } from './parsers/categorize.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -21,6 +26,11 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
+// Em produção o segredo vem do Secret do Kubernetes — nunca do fallback.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('JWT_SECRET obrigatório em produção. Abortando.');
+  process.exit(1);
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-finance-hub-2026';
 
 // Middleware to verify JWT
@@ -149,12 +159,22 @@ pool.query('SELECT NOW()', async (err, res) => {
 
       console.log('Tabelas de isolamento Multi-user criadas com sucesso');
 
+      // Migration para a importação de extratos: chave de deduplicação.
+      // Guarda o FITID do OFX (ou um hash de data+valor+descrição no CSV) para
+      // que reimportar o mesmo extrato não duplique lançamentos.
+      await pool.query(
+        'ALTER TABLE transactions ADD COLUMN IF NOT EXISTS import_hash VARCHAR(64);'
+      ).catch(() => {});
+
       // Setup Indexes for Performance Optimization
       const createIndexes = [
         'CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions (user_id);',
         'CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions (user_id, date DESC);',
         'CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets (user_id);',
-        'CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals (user_id);'
+        'CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals (user_id);',
+        // Índice parcial: só vale para linhas importadas. Transações criadas
+        // à mão ficam com import_hash NULL e não sofrem restrição de unicidade.
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_import_hash ON transactions (user_id, import_hash) WHERE import_hash IS NOT NULL;'
       ];
       
       for (const idxQuery of createIndexes) {
@@ -164,6 +184,22 @@ pool.query('SELECT NOW()', async (err, res) => {
     } catch (tableErr) {
       console.error('Error creating tables:', tableErr);
     }
+  }
+});
+
+// HEALTH — usado pelas probes do Kubernetes
+// livenessProbe: só confirma que o processo responde
+app.get('/api/healthz', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// readinessProbe: só entra no balanceamento se o banco responder
+app.get('/api/readyz', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ready' });
+  } catch (err) {
+    res.status(503).json({ status: 'database unavailable' });
   }
 });
 
@@ -490,6 +526,152 @@ app.post('/api/settings', verifyToken, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// IMPORTAÇÃO DE EXTRATOS (OFX / CSV)
+
+// Armazenamento em memória de propósito: o arquivo é processado e descartado
+// na mesma requisição. Nada toca o disco, então os pods seguem stateless.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = /\.(ofx|csv|txt)$/i.test(file.originalname);
+    cb(ok ? null : new Error('Formato não suportado. Envie um arquivo .ofx ou .csv'), ok);
+  },
+});
+
+// Chave de deduplicação. O FITID do OFX é atribuído pelo próprio banco e é o
+// identificador mais confiável possível. No CSV, que não tem esse campo,
+// a alternativa é a assinatura do lançamento.
+const buildImportHash = (txn) => {
+  const seed = txn.fitid
+    ? `fitid:${txn.fitid}`
+    : `sig:${txn.date}|${txn.amount.toFixed(2)}|${txn.description.toLowerCase()}`;
+  return crypto.createHash('sha256').update(seed).digest('hex').slice(0, 64);
+};
+
+// Etapa 1: lê o arquivo e devolve o que entendeu, SEM gravar nada.
+// A confirmação é sempre da pessoa — importar extrato direto no banco seria
+// irreversível e qualquer erro de parsing viraria sujeira permanente.
+app.post('/api/import/preview', verifyToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+    const name = req.file.originalname.toLowerCase();
+    const isOfx = name.endsWith('.ofx') || req.file.buffer.subarray(0, 2048).toString('latin1').includes('<STMTTRN>');
+
+    let parsed;
+    try {
+      parsed = isOfx ? parseOfx(req.file.buffer) : parseCsv(req.file.buffer);
+    } catch (parseErr) {
+      return res.status(422).json({ error: parseErr.message });
+    }
+
+    // Sugere categoria só entre as que a pessoa realmente tem cadastradas.
+    const catResult = await pool.query(
+      'SELECT name FROM categories WHERE user_id = $1',
+      [req.user.userId]
+    );
+    const available = catResult.rows.map((r) => r.name);
+
+    const withHash = parsed.transactions.map((t) => ({
+      ...t,
+      import_hash: buildImportHash(t),
+      category: suggestCategory(t.description, t.type, available),
+    }));
+
+    // Marca o que já existe para a pessoa ver antes de confirmar.
+    const hashes = withHash.map((t) => t.import_hash);
+    const existing = await pool.query(
+      'SELECT import_hash FROM transactions WHERE user_id = $1 AND import_hash = ANY($2)',
+      [req.user.userId, hashes]
+    );
+    const known = new Set(existing.rows.map((r) => r.import_hash));
+
+    const transactions = withHash.map((t) => ({ ...t, duplicate: known.has(t.import_hash) }));
+    const novos = transactions.filter((t) => !t.duplicate).length;
+
+    res.json({
+      format: isOfx ? 'OFX' : 'CSV',
+      total: transactions.length,
+      novos,
+      duplicados: transactions.length - novos,
+      warnings: parsed.warnings,
+      transactions,
+    });
+  } catch (err) {
+    console.error('Erro no preview de importação:', err);
+    res.status(500).json({ error: 'Falha ao processar o arquivo' });
+  }
+});
+
+// Etapa 2: grava o que a pessoa confirmou (já com as categorias que ela ajustou).
+app.post('/api/import/commit', verifyToken, async (req, res) => {
+  const { transactions } = req.body;
+
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    return res.status(400).json({ error: 'Nenhuma transação para importar' });
+  }
+  if (transactions.length > 2000) {
+    return res.status(400).json({ error: 'Limite de 2000 transações por importação' });
+  }
+
+  const client = await pool.connect();
+  try {
+    // Tudo ou nada: uma falha no meio não pode deixar meio extrato importado.
+    await client.query('BEGIN');
+    let inserted = 0;
+    let skipped = 0;
+
+    for (const t of transactions) {
+      if (!t.date || !t.description || t.amount === undefined || !t.type) {
+        skipped++;
+        continue;
+      }
+
+      // ON CONFLICT sobre o índice parcial: a corrida entre duas importações
+      // simultâneas do mesmo arquivo resolve no banco, não na aplicação.
+      const result = await client.query(
+        `INSERT INTO transactions (user_id, description, category, amount, type, date, import_hash)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (user_id, import_hash) WHERE import_hash IS NOT NULL DO NOTHING
+         RETURNING id`,
+        [
+          req.user.userId,
+          String(t.description).slice(0, 255),
+          t.category || 'Outros',
+          Math.abs(Number(t.amount)),
+          t.type === 'revenue' ? 'revenue' : 'expense',
+          t.date,
+          t.import_hash || buildImportHash(t),
+        ]
+      );
+
+      if (result.rowCount > 0) inserted++;
+      else skipped++;
+    }
+
+    await client.query('COMMIT');
+    res.json({ inserted, skipped });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao gravar importação:', err);
+    res.status(500).json({ error: 'Falha ao gravar as transações' });
+  } finally {
+    client.release();
+  }
+});
+
+// Traduz os erros do multer (tamanho, formato) em mensagem legível.
+app.use((err, _req, res, next) => {
+  if (err && (err instanceof multer.MulterError || /Formato não suportado/.test(err.message))) {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Arquivo maior que 5MB'
+      : err.message;
+    return res.status(400).json({ error: msg });
+  }
+  next(err);
 });
 
 app.listen(port, () => {

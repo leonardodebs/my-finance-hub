@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+lint_output.txt
+bun.lockb
+bun.lock
+k8s
+scripts
+iniciar_financas.bat
+playwright-report
+test-results

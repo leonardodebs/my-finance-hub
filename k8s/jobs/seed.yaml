@@ -1,0 +1,35 @@
+# Job avulso para popular o banco com os dados de demonstração do server/seed.js.
+# Fica FORA de k8s/ porque o deploy.sh roda "kubectl apply -f k8s/" (não recursivo);
+# se estivesse lá, o banco seria re-semeado a cada deploy.
+#
+# Uso:  kubectl create -f k8s/jobs/seed.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: finance-seed-
+  namespace: finance
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seed
+          # Substituído pela tag corrente no momento da execução
+          image: localhost:5000/finance-api:latest
+          command: ["node", "server/seed.js"]
+          env:
+            - name: DB_HOST
+              value: finance-postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: postgres
+            - name: DB_NAME
+              value: my_finance
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: finance-secrets
+                  key: DB_PASSWORD

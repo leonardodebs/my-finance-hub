@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finance
+  namespace: finance
+  annotations:
+    # O padrão do ingress-nginx é 1MB e um extrato passa disso com facilidade.
+    # Sem isto o upload morre num 413 antes de chegar na API. O limite real
+    # é o do multer (5MB); esta folga evita cortar no meio do multipart.
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: finance.192.168.15.3.nip.io
+      http:
+        paths:
+          # /api tem que vir antes de / — o ingress-nginx casa o prefixo mais longo
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: finance-api
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finance-web
+                port:
+                  number: 80
+    # Acesso direto por IP, sem depender de DNS
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: finance-api
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: finance-web
+                port:
+                  number: 80
