@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Instalação única do k3s no servidor Lenovo (192.168.15.3).
+# Instalação única do k3s no servidor que vai hospedar a aplicação.
+# Pré-requisitos: Linux com Docker e as portas 80, 6443 e 5000 livres.
+# O nó recebe o hostname da máquina, que é o padrão do k3s.
 # Rodar NO SERVIDOR:  sudo bash scripts/install-k3s.sh
 set -euo pipefail
 
@@ -64,8 +66,7 @@ if ! systemctl is-active --quiet k3s; then
   curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
     --disable traefik \
     --disable servicelb \
-    --write-kubeconfig-mode 644 \
-    --node-name vmlab" sh -
+    --write-kubeconfig-mode 644" sh -
 else
   echo "k3s já está ativo."
 fi
@@ -78,7 +79,7 @@ done
 k3s kubectl get nodes
 
 # --- kubeconfig para o usuário ---------------------------------------------
-USER_NAME="${SUDO_USER:-leonardo}"
+USER_NAME="${SUDO_USER:-root}"
 USER_HOME=$(getent passwd "$USER_NAME" | cut -d: -f6)
 log "Copiando kubeconfig para $USER_HOME/.kube/config"
 mkdir -p "$USER_HOME/.kube"
