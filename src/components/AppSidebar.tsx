@@ -1,4 +1,4 @@
-import { Home, ArrowUpDown, Target, PiggyBank, Settings, LogOut } from "lucide-react";
+import { Home, ArrowUpDown, Target, PiggyBank, Settings, LogOut, Upload } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -17,6 +17,7 @@ const navItems = [
   { title: "Transações", url: "/transacoes", icon: ArrowUpDown },
   { title: "Orçamentos", url: "/orcamentos", icon: Target },
   { title: "Metas", url: "/metas", icon: PiggyBank },
+  { title: "Importar", url: "/importar", icon: Upload },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 

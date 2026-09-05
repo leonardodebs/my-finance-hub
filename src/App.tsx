@@ -13,6 +13,7 @@ const Transactions = lazy(() => import("./pages/Transactions.tsx"));
 const Budgets = lazy(() => import("./pages/Budgets.tsx"));
 const Goals = lazy(() => import("./pages/Goals.tsx"));
 const Settings = lazy(() => import("./pages/Settings.tsx"));
+const Import = lazy(() => import("./pages/Import.tsx"));
 const Login = lazy(() => import("./pages/Login.tsx"));
 const Register = lazy(() => import("./pages/Register.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -47,6 +48,7 @@ const App = () => (
                   <Route path="/transacoes" element={<Transactions />} />
                   <Route path="/orcamentos" element={<Budgets />} />
                   <Route path="/metas" element={<Goals />} />
+                  <Route path="/importar" element={<Import />} />
                   <Route path="/configuracoes" element={<Settings />} />
                 </Route>
                 
