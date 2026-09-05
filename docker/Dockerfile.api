@@ -1,0 +1,20 @@
+# ---- API: Express + pg ----
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Só as dependências de runtime. package-lock.json é a fonte da verdade,
+# então não há drift de versão entre dev e produção.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY server ./server
+
+ENV NODE_ENV=production
+ENV PORT=3001
+EXPOSE 3001
+
+# Roda como usuário sem privilégios (o node:alpine já traz o uid 1000 "node")
+USER node
+
+CMD ["node", "server/index.js"]

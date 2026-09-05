@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Em produção o Ingress roteia /api -> serviço da API.
+    // Em dev, este proxy reproduz o mesmo caminho relativo.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_PROXY || "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()],
   resolve: {
