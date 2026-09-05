@@ -1,0 +1,127 @@
+# Proxy que torna as métricas do kubelet alcançáveis pelo Prometheus do host.
+#
+# POR QUE ISTO EXISTE
+#
+# O kubelet escuta em 0.0.0.0:10250, mas as regras de firewall que o k3s
+# instala bloqueiam essa porta (e a 6443) para as sub-redes bridge do Docker.
+# O Prometheus roda como container Docker, então não alcança nenhuma das duas.
+# A faixa NodePort, em contrapartida, é liberada.
+#
+# Um POD, por estar na rede do cluster, alcança o kubelet normalmente. Este
+# proxy fica no meio: recebe na NodePort (que o Docker enxerga) e encaminha
+# para o kubelet (que o pod enxerga).
+#
+# A alternativa seria abrir a 10250 no iptables do host. Preferi não mexer no
+# firewall de um servidor que roda outros ~20 containers, e regra de iptables
+# não sobrevive a reboot sem persistência extra.
+#
+# SEGURANÇA
+#
+# O proxy NÃO guarda credencial. Ele repassa o header Authorization que vem do
+# Prometheus, e quem autentica continua sendo o kubelet — sem token válido a
+# resposta é 401. A NodePort não é uma porta aberta para o kubelet.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubelet-metrics-proxy
+  namespace: monitoring
+data:
+  # nginx:alpine roda envsubst nos arquivos de /etc/nginx/templates na
+  # inicialização, o que evita fixar o IP do nó no manifesto.
+  default.conf.template: |
+    server {
+      listen 8080;
+
+      # Só os caminhos de métrica. O restante da API do kubelet
+      # (exec, logs, portForward) fica fora de alcance.
+      location = /metrics {
+        proxy_pass https://${NODE_IP}:10250/metrics;
+        proxy_ssl_verify off;
+        proxy_set_header Authorization $http_authorization;
+      }
+
+      location = /metrics/cadvisor {
+        proxy_pass https://${NODE_IP}:10250/metrics/cadvisor;
+        proxy_ssl_verify off;
+        proxy_set_header Authorization $http_authorization;
+      }
+
+      location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+      }
+
+      location / {
+        return 404;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubelet-metrics-proxy
+  namespace: monitoring
+  labels:
+    app: kubelet-metrics-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubelet-metrics-proxy
+  template:
+    metadata:
+      labels:
+        app: kubelet-metrics-proxy
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # IP do nó onde este pod está, sem precisar codificar endereço.
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          volumeMounts:
+            - name: template
+              mountPath: /etc/nginx/templates
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: template
+          configMap:
+            name: kubelet-metrics-proxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubelet-metrics-proxy
+  namespace: monitoring
+spec:
+  type: NodePort
+  selector:
+    app: kubelet-metrics-proxy
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      # Porta fixa: o prometheus.yml do host aponta para ela.
+      nodePort: 30081
