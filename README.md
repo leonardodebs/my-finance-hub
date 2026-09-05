@@ -2,114 +2,160 @@
 
 Um centro de controle financeiro moderno, intuitivo e completo para gestão de gastos pessoais, orçamentos e metas, construído com tecnologias de ponta.
 
+Roda de duas formas: local, com `npm run dev`, ou conteinerizado em **Kubernetes (k3s)** — ver [k8s/README.md](k8s/README.md).
+
 ---
 
 ## 🚀 Funcionalidades Principais
 
 ### 📊 Painel de Controle (Dashboard)
 - **Visão Geral**: Resumo rápido de saldo atual, receitas totais e despesas.
-- **Gráficos Interativos**: Visualização de gastos por categoria para identificar para onde seu dinheiro está indo.
-- **Comparativo Mensal**: Inteligência que compara os gastos do mês atual com o anterior.
+- **Receitas × Despesas**: Gráfico de evolução mostrando os meses anteriores em relação ao mês selecionado.
+- **Gastos por Categoria**: Visualização para identificar para onde seu dinheiro está indo.
+- **Filtro global de mês e ano** no cabeçalho, aplicado a todo o painel.
+
+### 📥 Importação de Extratos Bancários
+- **Formatos**: OFX (1.x SGML e 2.x XML) e CSV. O formato é detectado pelo conteúdo, não só pela extensão.
+- **Conferência antes de gravar**: o arquivo nunca vai direto para o banco. A tela mostra o que foi entendido, você ajusta as categorias e desmarca o que não quer.
+- **Deduplicação**: reimportar o mesmo extrato não duplica lançamentos. A chave é o `FITID`, identificador que o próprio banco atribui a cada transação.
+- **Classificação automática** por palavra-chave, calibrada com descritores reais de cartão (que truncam nomes e usam prefixos de adquirente como `IFD*`).
+
+> **Prefira OFX.** É estruturado e traz identificador único por lançamento. CSV funciona, mas cada banco inventa um layout e o parser depende de heurística.
 
 ### 💸 Gestão de Transações
 - **Histórico Completo**: Lista detalhada de todas as entradas e saídas.
-- **Filtros Avançados**: Pesquisa por descrição, categoria ou filtros de período (7 dias, 30 dias, este mês, este ano).
-- **Exportação inteligente**: Gerar relatórios de transações em formato **PDF** para controle externo.
+- **Filtros combináveis**: busca textual, **categoria** (com contagem de lançamentos), período (7 dias, 30 dias, este mês, mês passado, este ano) e tipo (entradas/saídas).
+- **Exportação**: relatórios em **PDF** a partir da visualização filtrada.
 
 ### 🎯 Planejamento e Metas
-- **Orçamentos por Categoria**: Defina limites mensais para categorias específicas (Alimentação, Lazer, etc.) e receba alertas visuais ao se aproximar do limite.
-- **Metas de Economia**: Acompanhe o progresso de objetivos de longo prazo, como reserva de emergência ou viagens.
+- **Orçamentos por Categoria**: Defina limites mensais e receba alertas visuais ao se aproximar do limite.
+- **Metas de Economia**: Acompanhe objetivos de longo prazo, como reserva de emergência ou viagens.
 
 ### ⚙️ Personalização
 - **Perfil de Usuário**: Gestão de informações básicas (Nome e E-mail).
-- **Preferências do App**: Ativação/Desativação de alertas de orçamento e resumos semanais.
-- **Gestão de Categorias Dinâmicas**: Crie suas próprias categorias de Receita e Despesa diretamente nas configurações, expandindo a flexibilidade do sistema para seu estilo de vida.
-- **Modo Visual**: Suporte completo a **Modo Escuro (Dark Mode)** para melhor conforto visual.
+- **Preferências do App**: Alertas de orçamento e resumos semanais.
+- **Categorias Dinâmicas**: Crie categorias próprias de Receita e Despesa nas configurações, além das padrão do sistema.
+- **Modo Visual**: Suporte a **Modo Escuro (Dark Mode)**.
 
 ### 🛡️ Gestão de Usuários (Admin)
-- **Painel Administrativo**: Usuários com privilégios de Admin podem visualizar, editar e excluir contas de outros usuários.
-- **Segurança Hierárquica**: Verificação de permissões tanto no Frontend quanto no Backend (Middleware `verifyAdmin`).
+- **Painel Administrativo**: Admins podem visualizar, editar e excluir contas.
+- **Segurança Hierárquica**: Permissões verificadas no Frontend e no Backend (middleware `verifyAdmin`).
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Frontend
-- **React + Vite**: Performance e rapidez extremas no desenvolvimento.
-- **TypeScript**: Segurança de tipos escalável.
-- **React Query (@tanstack/react-query)**: Gerenciamento de estado global e cache inteligente de requisições API. Sem necessidade de recarregamentos desnecessários.
-- **Code-Splitting (React.lazy)**: Carregamento assíncrono de rotas (Lazy Loading) para um Initial Load absurdamente rápido.
-- **Tailwind CSS + Shadcn/UI**: Componentes elegantes, refinados e acessíveis.
-- **Framer Motion**: Animações fluidas e micro-interações que encantam.
+- **React + Vite** e **TypeScript**.
+- **React Query**: cache inteligente de requisições, sem recarregamentos desnecessários.
+- **Code-Splitting (React.lazy)**: carregamento assíncrono de rotas.
+- **Tailwind CSS + Shadcn/UI** e **Framer Motion**.
 
 ### Backend & Segurança
-- **Node.js + Express**: API veloz e segura.
-- **PostgreSQL**: Banco de dados relacional com **Índices de Performance** configurados na estrutura de dados.
-- **Multi-Tenancy**: Isolamento completo de dados `user_id`, garantindo que um usuário não acesse os dados de outro de nenhuma maneira.
-- **Autenticação JWT**: API inteiramente protegida por JSON Web Tokens.
-- **BcryptJS**: Hash e salting avançado para senhas de usuários.
+- **Node.js + Express** e **PostgreSQL** com índices de performance.
+- **Multi-Tenancy**: isolamento por `user_id` em todas as consultas.
+- **Autenticação JWT** e **BcryptJS** para hash de senhas.
+- **Parsers próprios** de OFX e CSV, sem dependência externa de parsing.
+
+### Infraestrutura
+- **Docker**: imagem da API em `node:20-alpine`; frontend em build multi-stage servido por **nginx**.
+- **Kubernetes (k3s)**: Postgres em StatefulSet com PVC, API e frontend em Deployments, roteamento por Ingress.
 
 ---
 
-## 📦 Como Executar o Projeto
+## 📦 Executando Localmente
 
 ### Pré-requisitos
-- Node.js (v20+) instalado.
-- PostgreSQL rodando (pode ser Windows ou WSL2 no Linux).
+- Node.js v20+
+- PostgreSQL rodando
 
-### Passos de Instalação (Linux/WSL2)
+### Passos
 1. **Clone o repositório**:
    ```bash
    git clone https://github.com/leonardodebs/my-finance-hub.git
    cd my-finance-hub
    ```
-2. **Configure o Banco de Dados**:
+2. **Crie o banco**:
    ```sql
    CREATE DATABASE my_finance;
    ```
-3. **Variáveis de Ambiente**:
-   Crie um `.env` com base no seu banco:
+3. **Configure o `.env`** na raiz:
    ```env
    PORT=3001
    DB_USER=postgres
    DB_PASSWORD=sua_senha
    DB_HOST=localhost
-   DB_PORT=5433 -- (Ou 5432 se for padrão)
+   DB_PORT=5432
    DB_NAME=my_finance
-   JWT_SECRET=super_secret_para_sua_api
+   JWT_SECRET=troque_por_um_valor_aleatorio_longo
    ```
-4. **Instale e Rode**:
+   As tabelas e os índices são criados automaticamente no primeiro boot da API.
+
+4. **Instale e rode**:
    ```bash
    npm install
-   
-   # Popule o banco com dados de exemplo reais (OPCIONAL)
+
+   # Popule com dados de exemplo (OPCIONAL)
    node server/seed.js
-   
-   # Inicie os serviços
+
+   # Inicie os dois serviços
    npm run server & npm run dev
    ```
 
+O frontend sobe em `http://localhost:8080` e conversa com a API pelo caminho relativo `/api`, que o Vite redireciona para a porta 3001 em desenvolvimento.
+
 ### 💰 Teste Rápido (Demo Mode)
-Caso queira testar o app já com centenas de transações, gráficos populados e metas em andamento, após rodar o `seed.js`, use as credenciais:
+Após rodar o `seed.js`, use as credenciais:
 - **Email**: `demo@linkedin.com`
 - **Senha**: `demo123`
+
+> ⚠️ O usuário demo é criado como **administrador** e sua senha é pública. Não o mantenha em uma instância com dados reais.
+
+### 🧪 Testes
+```bash
+npm test
+```
+Cobre os parsers de OFX e CSV e o classificador de categorias.
+
+---
+
+## ☸️ Deploy em Kubernetes
+
+O projeto roda em **k3s single-node**. A instalação e a operação estão documentadas em **[k8s/README.md](k8s/README.md)**, incluindo a topologia, a justificativa de cada decisão e o procedimento de rollback.
+
+Resumo:
+
+```bash
+# No servidor, uma vez (pede sudo)
+sudo bash scripts/install-k3s.sh
+
+# Na estação de trabalho, a cada deploy (não pede sudo)
+bash scripts/deploy.sh
+```
+
+> Os scripts e os manifestos têm o endereço do servidor fixo (`192.168.15.3`, usuário `leonardo`). Ajuste as variáveis `SERVER` e `REMOTE_DIR` no [scripts/deploy.sh](scripts/deploy.sh) e o `host` no [k8s/05-ingress.yaml](k8s/05-ingress.yaml) para o seu ambiente.
 
 ---
 
 ## 📝 Maturidade do Projeto e Atualizações Recentes
 
-- 🔐 **Segurança Hardening**: Autenticação por JWT, Cors configurado, senhas encriptadas via Bcrypt e Isolamento de Dados Per-User.
-- ⚡ **Performance e Lazy Loading**: As métricas de *First Contentful Paint* (FCP) saltaram com as páginas modulares e React Query servindo dados do cache imediatamente.
-- 👑 **Admin Control**: Adicionado painel de super-usuário para controle de usuários e segurança em cascata no banco de dados.
-- 🎨 **UX Premium**: Micro-animações fluidas, Dark Mode persistente e Logotipo renovado para uma experiência profissional.
-- 🏷️ **Categorias Dinâmicas**: Implementação de sistema CRUD para categorias personalizadas com persistência em banco de dados e isolamento por usuário.
-- 📄 **Exportação de Relatórios**: O sistema consolida as métricas na visualização atual e gera documentos PDF estruturados.
+- ☸️ **Deploy em Kubernetes**: aplicação conteinerizada e rodando em k3s, com banco persistido em PVC, healthchecks e rollout automatizado.
+- 📥 **Importação de Extratos**: leitura de OFX e CSV com conferência prévia, deduplicação por identificador do banco e classificação automática de categorias.
+- 🔍 **Filtro por Categoria**: a lista de transações passou a combinar categoria, período, tipo e busca textual.
+- 🔐 **Segurança**: JWT, CORS, senhas com Bcrypt, isolamento por usuário e `JWT_SECRET` obrigatório em produção.
+- ⚡ **Performance**: páginas modulares com lazy loading e React Query servindo do cache.
+- 👑 **Admin Control**: painel de super-usuário com segurança em cascata no banco.
+- 🏷️ **Categorias Dinâmicas**: CRUD de categorias personalizadas com persistência e isolamento por usuário.
+- 📄 **Exportação de Relatórios**: consolidação das métricas da visualização atual em PDF.
 
 ---
 
 ## 🤖 Desenvolvimento com IA
 
-Este projeto contou com a "mão" (ou o processamento) de uma tecnologia de ponta: foi desenvolvido e aprimorado em parceria com o **Google Antigravity**, utilizando o poder do **Google Gemini**. A IA atuou como programadora real em todas as etapas, desde a arquitetura do banco de dados até o refino das micro-animações da interface.
+Este projeto foi desenvolvido em parceria com IA atuando como programadora em todas as etapas, da arquitetura do banco ao refino das micro-animações.
+
+- **Google Antigravity / Gemini**: aplicação, banco de dados e interface.
+- **Claude (Anthropic)**: conteinerização e deploy em Kubernetes, parsers de extrato e classificador de categorias.
 
 ---
 
