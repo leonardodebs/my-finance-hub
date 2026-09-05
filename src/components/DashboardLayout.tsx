@@ -10,6 +10,7 @@ const routeNames: Record<string, string> = {
   "/transacoes": "Transações",
   "/orcamentos": "Orçamentos",
   "/metas": "Metas",
+  "/importar": "Importar Extrato",
   "/configuracoes": "Configurações",
 };
 
