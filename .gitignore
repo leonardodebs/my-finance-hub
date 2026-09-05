@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Saidas de ferramentas
+lint_output.txt
+
 # Environment variables
 .env
 .env.*

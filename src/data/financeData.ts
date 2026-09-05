@@ -308,40 +308,7 @@ export const calculateTotals = (txns: Transaction[]) => {
   };
 };
 
-export const calculateMonthlyComparison = (txns: Transaction[]) => {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  
-  const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
-  const lastMonth = lastMonthDate.getMonth();
-  const lastMonthYear = lastMonthDate.getFullYear();
 
-  const currentMonthTxns = txns.filter(t => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
-
-  const lastMonthTxns = txns.filter(t => {
-    const d = new Date(t.date);
-    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-  });
-
-  const currentRevenue = currentMonthTxns.filter(t => t.type === 'revenue').reduce((acc, t) => acc + Number(t.amount), 0);
-  const currentExpenses = currentMonthTxns.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
-  
-  const lastRevenue = lastMonthTxns.filter(t => t.type === 'revenue').reduce((acc, t) => acc + Number(t.amount), 0);
-  const lastExpenses = lastMonthTxns.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
-
-  return {
-    current: { revenue: currentRevenue, expenses: currentExpenses },
-    last: { revenue: lastRevenue, expenses: lastExpenses },
-    diff: {
-      revenue: lastRevenue === 0 ? 100 : ((currentRevenue - lastRevenue) / lastRevenue) * 100,
-      expenses: lastExpenses === 0 ? 100 : ((currentExpenses - lastExpenses) / lastExpenses) * 100
-    }
-  };
-};
 
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
