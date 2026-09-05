@@ -10,12 +10,20 @@ import crypto from 'crypto';
 import { parseOfx } from './parsers/ofx.js';
 import { parseCsv } from './parsers/csv.js';
 import { suggestCategory } from './parsers/categorize.js';
+import {
+  registry as metricsRegistry,
+  metricsMiddleware,
+  importedTransactions,
+  importPreviews,
+  dbUp,
+} from './metrics.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
 
 // Database connection
 const pool = new Pool({
@@ -197,9 +205,23 @@ app.get('/api/healthz', (_req, res) => {
 app.get('/api/readyz', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
+    dbUp.set(1);
     res.json({ status: 'ready' });
   } catch (err) {
+    dbUp.set(0);
     res.status(503).json({ status: 'database unavailable' });
+  }
+});
+
+// MÉTRICAS — raspado pelo Prometheus do host via Ingress.
+// Sem autenticação de propósito: não expõe dado de usuário, apenas
+// contadores agregados, e o Prometheus não tem como carregar um JWT.
+app.get('/api/metrics', async (_req, res) => {
+  try {
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.end(await metricsRegistry.metrics());
+  } catch (err) {
+    res.status(500).end();
   }
 });
 
@@ -565,8 +587,10 @@ app.post('/api/import/preview', verifyToken, upload.single('file'), async (req, 
     try {
       parsed = isOfx ? parseOfx(req.file.buffer) : parseCsv(req.file.buffer);
     } catch (parseErr) {
+      importPreviews.inc({ format: isOfx ? 'OFX' : 'CSV', result: 'error' });
       return res.status(422).json({ error: parseErr.message });
     }
+    importPreviews.inc({ format: isOfx ? 'OFX' : 'CSV', result: 'ok' });
 
     // Sugere categoria só entre as que a pessoa realmente tem cadastradas.
     const catResult = await pool.query(
@@ -653,6 +677,10 @@ app.post('/api/import/commit', verifyToken, async (req, res) => {
     }
 
     await client.query('COMMIT');
+    // Contabilizado só após o COMMIT: métrica de transação que sofreu
+    // rollback contaria importação que nunca existiu.
+    if (inserted > 0) importedTransactions.inc({ result: 'inserted' }, inserted);
+    if (skipped > 0) importedTransactions.inc({ result: 'skipped' }, skipped);
     res.json({ inserted, skipped });
   } catch (err) {
     await client.query('ROLLBACK');

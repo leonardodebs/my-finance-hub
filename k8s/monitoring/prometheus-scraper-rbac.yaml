@@ -1,0 +1,61 @@
+# Credencial de leitura para o Prometheus que roda FORA do cluster.
+#
+# O kubelet responde 401 sem autenticação, então raspar CPU e memória por pod
+# (endpoints /metrics e /metrics/cadvisor na porta 10250) exige um token.
+#
+# Este ServiceAccount tem apenas o mínimo para métricas: ler os endpoints do
+# kubelet e do control plane. Não lê Secret, não lista dado de aplicação e não
+# escreve nada.
+#
+# O token é extraído com scripts/setup-monitoring.sh e montado no container do
+# Prometheus. É um Secret de longa duração de propósito — um Prometheus externo
+# não tem como renovar token projetado, que expira em 1h.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-scraper
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-scraper
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  # Endpoints de métrica do próprio control plane
+  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-scraper
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-scraper
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-scraper
+    namespace: monitoring
+---
+# A partir do Kubernetes 1.24 o ServiceAccount não gera Secret automaticamente.
+# Este Secret com a annotation pede ao controlador um token que não expira,
+# que é o que um raspador externo precisa.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-scraper-token
+  namespace: monitoring
+  annotations:
+    kubernetes.io/service-account.name: prometheus-scraper
+type: kubernetes.io/service-account-token
