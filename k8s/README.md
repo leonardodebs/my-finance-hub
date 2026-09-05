@@ -1,8 +1,9 @@
 # my-finance-hub no k3s
 
 Deploy single-node. Os manifestos assumem um servidor Linux com Docker já
-instalado; ajuste o endereço em [`scripts/deploy.sh`](../scripts/deploy.sh) e o
-`host` do Ingress para o seu ambiente.
+instalado e não fixam endereço nenhum: o destino do deploy vem do `.env.deploy`
+(fora do versionamento) e o Ingress usa uma regra sem `host`, atendendo qualquer
+nome que resolva para o nó.
 
 ## Topologia
 
@@ -83,6 +84,25 @@ kubectl create -f k8s/jobs/seed.yaml
 # Reaplica o classificador de categorias no histórico (simulação)
 kubectl create -f k8s/jobs/recategorize.yaml
 ```
+
+### Backup automático
+
+O [`06-backup-cronjob.yaml`](06-backup-cronjob.yaml) roda `pg_dump` todo dia às
+03:00, comprime, valida o gzip e mantém 14 dias de histórico num PVC separado do
+banco — backup no mesmo volume que ele protege não é backup.
+
+O script aborta se o dump sair com menos de 1KB, em vez de guardar um arquivo
+vazio que passaria por backup bom na hora do desespero.
+
+```bash
+kubectl -n finance get cronjob                       # agendamento
+kubectl -n finance create job --from=cronjob/finance-postgres-backup manual
+kubectl -n finance logs job/manual                   # conferir
+```
+
+Os dumps ficam no PVC `finance-backups`. Ambos os volumes vivem no disco do
+mesmo nó, então isto cobre erro humano e corrupção lógica, não falha de disco:
+para isso, copie os dumps para fora da máquina.
 
 O Job de recategorização roda com `--dry-run` por padrão e só mexe em transações
 que estão em `Outros` — categoria ajustada à mão nunca é sobrescrita por palpite

@@ -4,34 +4,24 @@ metadata:
   name: finance
   namespace: finance
   annotations:
-    # O padrão do ingress-nginx é 1MB e um extrato passa disso com facilidade.
-    # Sem isto o upload morre num 413 antes de chegar na API. O limite real
-    # é o do multer (5MB); esta folga evita cortar no meio do multipart.
+    # O padrão do ingress-nginx é 1MB e um extrato bancário passa disso com
+    # facilidade. Sem isto o upload morre num 413 antes de chegar na API. O
+    # limite real é o do multer (5MB); esta folga evita cortar no meio do
+    # multipart.
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 spec:
   ingressClassName: nginx
   rules:
-    - host: finance.192.168.15.3.nip.io
-      http:
-        paths:
-          # /api tem que vir antes de / — o ingress-nginx casa o prefixo mais longo
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: finance-api
-                port:
-                  number: 3001
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: finance-web
-                port:
-                  number: 80
-    # Acesso direto por IP, sem depender de DNS
+    # Regra sem host: atende qualquer nome que chegue, incluindo o IP do nó e
+    # qualquer DNS que aponte para ele (nip.io, um domínio próprio, o hostname
+    # da máquina). Por isso o manifesto não fixa endereço nenhum — o mesmo
+    # arquivo serve em qualquer ambiente.
+    #
+    # Para restringir a um domínio específico, acrescente uma regra com `host:`
+    # antes desta; o ingress-nginx casa a mais específica primeiro.
     - http:
         paths:
+          # /api vem antes de / — o ingress-nginx casa o prefixo mais longo
           - path: /api
             pathType: Prefix
             backend:

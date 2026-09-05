@@ -126,14 +126,18 @@ O projeto roda em **k3s single-node**. A instalação e a operação estão docu
 Resumo:
 
 ```bash
-# No servidor, uma vez (pede sudo)
+# 1. Aponte para o seu servidor
+cp .env.deploy.example .env.deploy
+#    edite SERVER=usuario@host
+
+# 2. No servidor, uma vez (pede sudo)
 sudo bash scripts/install-k3s.sh
 
-# Na estação de trabalho, a cada deploy (não pede sudo)
+# 3. Na estação de trabalho, a cada deploy (não pede sudo)
 bash scripts/deploy.sh
 ```
 
-> Os scripts e os manifestos têm o endereço do servidor fixo (`192.168.15.3`, usuário `leonardo`). Ajuste as variáveis `SERVER` e `REMOTE_DIR` no [scripts/deploy.sh](scripts/deploy.sh) e o `host` no [k8s/05-ingress.yaml](k8s/05-ingress.yaml) para o seu ambiente.
+Nada no repositório fixa endereço de servidor: o destino vem do `.env.deploy`, que fica fora do versionamento, e o Ingress usa uma regra sem `host`, atendendo qualquer nome que aponte para o nó — IP, `nip.io` ou domínio próprio.
 
 ---
 

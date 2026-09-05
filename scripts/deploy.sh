@@ -4,9 +4,32 @@
 # Não precisa de sudo — a instalação (install-k3s.sh) já cuidou do que exige root.
 set -euo pipefail
 
-SERVER="${SERVER:-leonardo@192.168.15.3}"
-REMOTE_DIR="${REMOTE_DIR:-/home/leonardo/apps/my-finance-hub}"
-REGISTRY="localhost:5000"
+# Configuração do ambiente. Fica em .env.deploy (fora do versionamento) para
+# que o repositório não carregue o endereço de nenhum servidor específico.
+# Copie .env.deploy.example e ajuste.
+if [[ -f "$(dirname "$0")/../.env.deploy" ]]; then
+  # shellcheck disable=SC1091
+  source "$(dirname "$0")/../.env.deploy"
+fi
+
+if [[ -z "${SERVER:-}" ]]; then
+  cat >&2 <<'EOF'
+ERRO: SERVER não definido.
+
+Crie o arquivo .env.deploy na raiz do projeto:
+
+    cp .env.deploy.example .env.deploy
+    # edite com o endereço do seu servidor
+
+Ou passe direto:
+
+    SERVER=usuario@192.168.0.10 bash scripts/deploy.sh
+EOF
+  exit 1
+fi
+
+REMOTE_DIR="${REMOTE_DIR:-/home/$(echo "$SERVER" | cut -d@ -f1)/apps/my-finance-hub}"
+REGISTRY="${REGISTRY:-localhost:5000}"
 NS=finance
 
 log() { echo -e "\n\033[1;34m==>\033[0m $*"; }
@@ -72,5 +95,4 @@ log "Estado final"
 ssh "$SERVER" "kubectl -n $NS get pods,svc,ingress"
 
 echo -e "\n\033[1;32mDeploy concluído.\033[0m"
-echo "Acesse:  http://192.168.15.3/"
-echo "         http://finance.192.168.15.3.nip.io/"
+echo "Acesse:  http://$(echo "$SERVER" | cut -d@ -f2)/"
