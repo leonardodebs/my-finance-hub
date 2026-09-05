@@ -60,7 +60,7 @@ export function CategoryManager() {
         <div className="flex gap-2">
           <select 
             value={newType}
-            onChange={(e) => setNewType(e.target.value as any)}
+            onChange={(e) => setNewType(e.target.value as "expense" | "revenue")}
             className="bg-muted rounded-lg px-3 py-2 text-sm outline-none border-border border"
           >
             <option value="expense">Despesa</option>

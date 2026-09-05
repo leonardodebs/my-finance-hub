@@ -37,7 +37,7 @@ export function AdminSection() {
           toast.success("Usuário atualizado com sucesso");
           setEditingId(null);
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
           toast.error(err.message || "Erro ao atualizar usuário");
         }
       }
@@ -48,7 +48,7 @@ export function AdminSection() {
     if (confirm("Tem certeza que deseja excluir permanentemente este usuário e todos os seus dados?")) {
       deleteMutation.mutate(id, {
         onSuccess: () => toast.success("Usuário excluído"),
-        onError: (err: any) => toast.error(err.message || "Erro ao excluir"),
+        onError: (err: Error) => toast.error(err.message || "Erro ao excluir"),
       });
     }
   };

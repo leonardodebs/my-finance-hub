@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminUsers, updateAdminUser, deleteAdminUser } from "../data/adminData";
+import { getAdminUsers, updateAdminUser, deleteAdminUser, type AdminUser } from "../data/adminData";
 
 export const useAdminUsers = () => {
   return useQuery({
@@ -11,7 +11,7 @@ export const useAdminUsers = () => {
 export const useUpdateAdminUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateAdminUser(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<AdminUser> }) => updateAdminUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
     },
