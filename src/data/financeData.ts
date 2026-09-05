@@ -61,9 +61,10 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   "Outros"
 ];
 
-export const DEFAULT_REVENUE_CATEGORIES = ["Salário", "Freelance", "Investimentos", "Outros"];
+// "Outros" fica sempre por último: é o catch-all da classificação automática.
+export const DEFAULT_REVENUE_CATEGORIES = ["Salário", "Freelance", "Investimentos", "Empréstimos", "Outros"];
 
-const API_URL = "http://localhost:3001/api";
+const API_URL = "/api";
 
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
