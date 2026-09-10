@@ -87,12 +87,28 @@ kubectl create -f k8s/jobs/recategorize.yaml
 
 ### Backup automático
 
-O [`06-backup-cronjob.yaml`](06-backup-cronjob.yaml) roda `pg_dump` todo dia às
-03:00, comprime, valida o gzip e mantém 14 dias de histórico num PVC separado do
-banco — backup no mesmo volume que ele protege não é backup.
+O [`06-backup-cronjob.yaml.tpl`](06-backup-cronjob.yaml.tpl) roda `pg_dump` todo
+dia às 03:00 e grava em **duas camadas**:
 
-O script aborta se o dump sair com menos de 1KB, em vez de guardar um arquivo
-vazio que passaria por backup bom na hora do desespero.
+1. **PVC `finance-backups`** — cópia rápida no cluster, 14 dias de retenção.
+2. **Disco externo montado no host** — 30 dias, sobrevive à perda do disco do nó.
+
+É um template porque os dois caminhos do host variam por máquina; o `deploy.sh`
+renderiza com `envsubst` a partir de `BACKUP_MOUNT` e `TEXTFILE_DIR` no
+`.env.deploy`. Sem essas variáveis o CronJob não é aplicado.
+
+Quatro proteções contra o backup que só falha na hora de restaurar:
+
+- `set -o pipefail`, senão falha do `pg_dump` no meio do pipe geraria um `.gz`
+  vazio com o job reportando sucesso.
+- Dump menor que 1KB é descartado e o job falha.
+- `gzip -t` no destino, porque erro de escrita em dispositivo removível é comum
+  e silencioso.
+- **Guarda contra o disco ausente:** montar o disco externo com `nofail` no
+  fstab é bom para o boot, mas se o dispositivo sumir o ponto de montagem vira
+  um diretório vazio no disco interno — e o backup gravaria ali achando que deu
+  certo. O job confere marcadores que só existem no disco real antes de copiar.
+  Isso não é hipotético: aconteceu em 05/09/2026, depois de uma queda de energia.
 
 ```bash
 kubectl -n finance get cronjob                       # agendamento
@@ -100,16 +116,67 @@ kubectl -n finance create job --from=cronjob/finance-postgres-backup manual
 kubectl -n finance logs job/manual                   # conferir
 ```
 
-Os dumps ficam no PVC `finance-backups`. Ambos os volumes vivem no disco do
-mesmo nó, então isto cobre erro humano e corrupção lógica, não falha de disco:
-para isso, copie os dumps para fora da máquina.
-
 O Job de recategorização roda com `--dry-run` por padrão e só mexe em transações
 que estão em `Outros` — categoria ajustada à mão nunca é sobrescrita por palpite
 automático. Para aplicar de verdade, remova o `--dry-run` dos `args`.
 
 Ambos usam `generateName`, então podem ser criados várias vezes sem conflito de
 nome, e se autodestroem 10 minutos após concluir (`ttlSecondsAfterFinished`).
+
+## Acoplamento com o homelab-automation-server
+
+A observabilidade deste projeto é **repartida entre dois repositórios**. Isto é
+consequência de reaproveitar o Prometheus e o Grafana que já rodam no host, em
+vez de subir um `kube-prometheus-stack` dentro do cluster — que num nó de 4
+núcleos custaria 2-3GB de RAM e deixaria dois Grafana para manter.
+
+O preço é este: **renomear uma métrica aqui quebra alerta lá, e nada avisa.**
+Esta seção existe para você lembrar antes de renomear.
+
+### O que o outro repositório consome deste
+
+| Métrica | Definida em |
+|---|---|
+| `http_request_duration_seconds` (histograma) | [`server/metrics.js`](../server/metrics.js) |
+| `finance_database_up` | [`server/metrics.js`](../server/metrics.js) |
+| `finance_imported_transactions_total` | [`server/metrics.js`](../server/metrics.js) |
+| `finance_import_previews_total` | [`server/metrics.js`](../server/metrics.js) |
+| `finance_backup_last_success_timestamp_seconds` | [`06-backup-cronjob.yaml.tpl`](06-backup-cronjob.yaml.tpl) |
+| `finance_backup_size_bytes` | [`06-backup-cronjob.yaml.tpl`](06-backup-cronjob.yaml.tpl) |
+| `finance_backup_usb_copy_success` | [`06-backup-cronjob.yaml.tpl`](06-backup-cronjob.yaml.tpl) |
+
+Endpoints que o Prometheus do host raspa, e quem os cria:
+
+| Endpoint | Criado por |
+|---|---|
+| `<host>/api/metrics` | rota no [`server/index.js`](../server/index.js), exposta pelo Ingress |
+| `<host>:30080/metrics` | [`monitoring/kube-state-metrics.yaml`](monitoring/kube-state-metrics.yaml) |
+| `<host>:30081/metrics` e `/metrics/cadvisor` | [`monitoring/kubelet-metrics-proxy.yaml`](monitoring/kubelet-metrics-proxy.yaml) |
+
+Consumidores, no `homelab-automation-server`:
+
+- `docker/monitoring/prometheus/prometheus.yml` — jobs `finance-app`, `k3s-state`,
+  `k3s-kubelet` e `k3s-cadvisor`
+- `docker/monitoring/prometheus/k3s-alerts.yml` — 16 regras
+- `docker/monitoring/grafana/provisioning/dashboards/k3s-finance-overview.json`
+
+### O que este repositório escreve no outro
+
+O CronJob de backup grava métricas no diretório do textfile collector do
+node-exporter, que fica **dentro** do repositório do homelab. O caminho vem de
+`TEXTFILE_DIR` no `.env.deploy`. O token de leitura do kubelet também é lido de
+um caminho de lá.
+
+### Antes de renomear uma métrica
+
+```bash
+# no homelab-automation-server
+grep -rn '<nome-da-metrica>' docker/monitoring/prometheus/ docker/monitoring/grafana/
+```
+
+Se aparecer, atualize os dois lados no mesmo ciclo — a alteração aqui é
+silenciosa do lado de lá: o alerta simplesmente para de disparar, e a ausência
+de alerta parece saúde.
 
 ## Operação
 
